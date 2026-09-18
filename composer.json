@@ -1,0 +1,101 @@
+{
+    "name": "packstub/filament-session-replay",
+    "description": "Session replay inside a Filament panel: every recording of packstub/session-replay in a filterable resource, the player with errors, failed Livewire requests and web vitals on the timeline, a relation manager and a \"Watch last session\" action for your users, masking declared on the form field, workspace-aware in multi-tenant panels.",
+    "keywords": [
+        "laravel",
+        "filament",
+        "filament-plugin",
+        "session-replay",
+        "session-recording",
+        "rrweb",
+        "livewire",
+        "support"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/icaliman"
+        }
+    ],
+    "authors": [
+        {
+            "name": "Packstub",
+            "email": "support@packstub.dev",
+            "homepage": "https://packstub.dev"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "filament/filament": "^5.0",
+        "packstub/session-replay": "^1.0",
+        "spatie/laravel-package-tools": "^1.93"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0|^11.2",
+        "laravel/pint": "^1.13",
+        "pestphp/pest": "^4.0|^5.1",
+        "pestphp/pest-plugin-laravel": "^4.0|^5.0",
+        "pestphp/pest-plugin-livewire": "^4.0|^5.0",
+        "orchestra/pest-plugin-testbench": "^4.0|^5.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../session-replay",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Packstub\\SessionReplay\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Packstub\\SessionReplay\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test:filter": "pest --filter",
+        "lint": "vendor/bin/pint",
+        "lint:test": "vendor/bin/pint --test",
+        "serve": [
+            "@php vendor/bin/testbench workbench:build --ansi",
+            "@php vendor/bin/testbench serve --ansi"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Packstub\\SessionReplay\\Filament\\FilamentSessionReplayServiceProvider"
+            ]
+        },
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "homepage": "https://github.com/packstub/filament-session-replay",
+    "support": {
+        "issues": "https://github.com/packstub/filament-session-replay/issues",
+        "source": "https://github.com/packstub/filament-session-replay",
+        "docs": "https://packstub.dev/docs/filament-session-replay"
+    },
+    "suggest": {
+        "packstub/filament-tenancy": "Database-per-tenant panels: recordings stay central and carry the workspace.",
+        "packstub/filament-account-switcher": "Impersonated sessions are flagged with who was impersonating.",
+        "bezhansalleh/filament-shield": "Register a policy for ReplaySession and Shield's permissions decide who watches."
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

@@ -1,0 +1,13 @@
+laravel: '@testbench'
+
+providers:
+  - Workbench\App\Providers\WorkbenchServiceProvider
+  - Workbench\App\Providers\AdminPanelProvider
+
+workbench:
+  start: /admin
+  install: true
+  build:
+    - create-sqlite-db
+    - migrate:refresh
+    - filament:assets
