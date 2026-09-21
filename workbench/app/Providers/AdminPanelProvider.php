@@ -18,6 +18,8 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Packstub\SessionReplay\SessionReplayPlugin;
 use Packstub\SessionReplay\Tests\Fixtures\Filament\Resources\Users\UserResource;
 use Packstub\SessionReplay\Tests\Fixtures\Models\User;
+use Workbench\App\Filament\Resources\Orders\OrderResource;
+use Workbench\App\Models\Order;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -28,7 +30,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->resources([UserResource::class])
+            ->resources([UserResource::class, OrderResource::class])
+            // LAB_SPA=1 composer serve: the panel navigates with wire:navigate, for the lab's measurements.
+            ->spa((bool) env('LAB_SPA', false))
             ->pages([Dashboard::class])
             ->plugin(SessionReplayPlugin::make()->widget()->navigationGroup('Support'))
             ->middleware([
@@ -46,6 +50,7 @@ class AdminPanelProvider extends PanelProvider
             ->bootUsing(function (): void {
                 // The workbench signs its one person in; a real panel has a login page for that.
                 if (! auth()->check() && ! app()->runningInConsole()) {
+                    Order::seedLab();
                     auth()->login(User::query()->firstOrCreate(['email' => 'ada@example.com'], ['name' => 'Ada Lovelace', 'password' => bcrypt('secret')]));
                 }
             });

@@ -1,5 +1,8 @@
 laravel: '@testbench'
 
+migrations:
+  - workbench/database/migrations
+
 providers:
   - Workbench\App\Providers\WorkbenchServiceProvider
   - Workbench\App\Providers\AdminPanelProvider

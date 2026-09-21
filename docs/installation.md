@@ -101,6 +101,10 @@ SessionReplayPlugin::make()
 
 `SessionReplayPlugin::get()` returns the plugin instance of the current panel.
 
+## What recording a panel costs
+
+Measured on a Filament 5 panel: a table page of 50 rows is a 34 KB snapshot, an open page nobody touches adds 0.2 KB per minute, the same table polling every two seconds 8 KB per minute, and each re-render of the table, modal or page change 10 to 30 KB. The Filament stylesheet is stored once for every recording. With the CPU slowed down four times, interaction latency was the same with and without the recorder. Dark mode, modals, notifications, `wire:navigate`, the rich editor and file uploads replay as they looked. The full table is in the core's [Storage](https://packstub.dev/docs/session-replay/storage#what-to-expect) page, and the lab that produced it is in this repository (`workbench/lab/measure.mjs`) if you want numbers for your own pages.
+
 ## Languages
 
 The resource, the watch page and the player ship in English, German, Spanish, Romanian and Russian and follow the app's locale. The panel's strings are JSON translations keyed by the English text, so your app's `lang/{locale}.json` overrides any of them or adds a language:

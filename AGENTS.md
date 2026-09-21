@@ -20,6 +20,7 @@ The core is required through a path repository (`../session-replay`) until it is
 - `src/Filament/Actions/WatchLastSessionAction`, `src/Filament/Widgets/ReplayStatsWidget`.
 - `src/Filament/FilamentSessionReplayServiceProvider` — views and the `maskInReplay()` / `blockInReplay()` macros on `Field`, `Column`, `Entry` and layout `Component`s.
 - `tests/Fixtures` — the admin panel, a `UserResource` using the relation manager, the action and the macros, a policy; `workbench/` — the app behind `composer serve`.
+- `workbench/lab/measure.mjs` — the measuring lab (Playwright against `composer serve`, the workbench's Orders resource): stored bytes and events per scenario, interaction latency with and without the recorder. The numbers in `docs/installation.md` and the core's `docs/storage.md` come from it; re-run it after a recorder change.
 - `docs/` — customer docs; synced into the store under `filament-session-replay/1.x` once public.
 
 ## Conventions
