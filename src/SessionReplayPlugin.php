@@ -39,6 +39,11 @@ class SessionReplayPlugin implements Plugin
 
     protected ?Closure $userLabelUsing = null;
 
+    protected ?Closure $tenantLabelUsing = null;
+
+    /** @var list<string> */
+    protected array $searchPeopleBy = ['name', 'email'];
+
     protected string|UnitEnum|null $navigationGroup = null;
 
     protected string|BackedEnum|null $navigationIcon = null;
@@ -125,6 +130,28 @@ class SessionReplayPlugin implements Plugin
     public function userLabelUsing(Closure $callback): static
     {
         $this->userLabelUsing = $callback;
+
+        return $this;
+    }
+
+    /** How a workspace is named in the table: fn (ReplaySession $session): ?string. The tenant's "name" otherwise. */
+    public function tenantLabelUsing(Closure $callback): static
+    {
+        $this->tenantLabelUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * The columns of the recorded people's tables the search box looks in
+     * (name and email by default; a column a table does not have is skipped).
+     * [] leaves the search to the person's key alone.
+     *
+     * @param  list<string>  $columns
+     */
+    public function searchPeopleBy(array $columns): static
+    {
+        $this->searchPeopleBy = array_values($columns);
 
         return $this;
     }
@@ -263,6 +290,31 @@ class SessionReplayPlugin implements Plugin
         }
 
         return '#'.$session->user_id;
+    }
+
+    public function tenantLabel(ReplaySession $session): ?string
+    {
+        if ($session->tenant_id === null) {
+            return null;
+        }
+
+        if ($this->tenantLabelUsing) {
+            $label = ($this->tenantLabelUsing)($session);
+
+            if (is_string($label) && $label !== '') {
+                return $label;
+            }
+        }
+
+        $label = $session->tenant?->getAttribute('name');
+
+        return is_scalar($label) && (string) $label !== '' ? (string) $label : '#'.$session->tenant_id;
+    }
+
+    /** @return list<string> */
+    public function getSearchPeopleBy(): array
+    {
+        return $this->searchPeopleBy;
     }
 
     public function getNavigationGroup(): string|UnitEnum|null

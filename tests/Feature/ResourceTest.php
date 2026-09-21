@@ -4,6 +4,8 @@ use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Packstub\SessionReplay\Facades\SessionReplay;
+use Packstub\SessionReplay\Filament\Actions\WatchLastSessionAction;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ListReplaySessions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ViewReplaySession;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
@@ -148,4 +150,90 @@ it('never offers to create or edit a recording', function () {
         ->and(ReplaySessionResource::canEdit(new ReplaySession))->toBeFalse()
         ->and(ReplaySessionResource::getNavigationGroup())->toBe('Support')
         ->and(ReplaySessionResource::getSlug())->toBe('session-replays');
+});
+
+it('finds a person by name or email, in whatever table they live', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $grace = $this->user(['name' => 'Grace Hopper', 'email' => 'grace@navy.example']);
+    $hers = $this->recording($grace);
+    $other = $this->recording($this->user(['name' => 'Alan Turing']));
+
+    $this->actingAs($grace);
+
+    Livewire::test(ListReplaySessions::class)
+        ->searchTable('hopper')->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
+        ->searchTable('navy.example')->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
+        ->searchTable('100%')->assertCanNotSeeTableRecords([$hers, $other]);
+
+    SessionReplayPlugin::get()->searchPeopleBy(['email', 'no_such_column']);
+
+    Livewire::test(ListReplaySessions::class)
+        ->searchTable('hopper')->assertCanNotSeeTableRecords([$hers])
+        ->searchTable('navy')->assertCanSeeTableRecords([$hers]);
+
+    SessionReplayPlugin::get()->searchPeopleBy(['name', 'email']);
+});
+
+it('names a workspace the way the app says', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $recording = $this->recording(team: $this->team('Acme'));
+
+    expect(SessionReplayPlugin::get()->tenantLabel($recording))->toBe('Acme')
+        ->and(SessionReplayPlugin::get()->tenantLabel($this->recording()))->toBeNull();
+
+    SessionReplayPlugin::get()->tenantLabelUsing(fn (ReplaySession $session): string => 'Workspace '.$session->tenant_id);
+
+    $this->actingAs($this->user());
+
+    Livewire::test(ListReplaySessions::class)->assertSee('Workspace '.$recording->tenant_id);
+});
+
+it('keeps what SessionReplay::visibleUsing() hides out of the list, the widget, a person\'s tab and the last-session action', function () {
+    Gate::define('viewSessionReplay', fn ($user, ?ReplaySession $session = null) => $session === null || ! $session->user?->is_staff);
+
+    $viewer = $this->user();
+    $staff = $this->user(['is_staff' => true]);
+    $open = $this->recording($this->user());
+    $hidden = $this->recording($staff);
+
+    $seenBy = null;
+
+    SessionReplay::visibleUsing(function ($query, $user) use (&$seenBy, $staff): void {
+        $seenBy = $user;
+        $query->where('user_id', '!=', (string) $staff->id);
+    });
+
+    $this->actingAs($viewer);
+
+    Livewire::test(ListReplaySessions::class)->assertCanSeeTableRecords([$open])->assertCanNotSeeTableRecords([$hidden]);
+
+    expect($seenBy->is($viewer))->toBeTrue()
+        ->and(ReplaySessionResource::scope(ReplaySession::query())->count())->toBe(1)
+        ->and(WatchLastSessionAction::lastSession($staff))->toBeNull();
+});
+
+it('ships every string it shows in German, Spanish, Romanian and Russian', function () {
+    $source = '';
+
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src', FilesystemIterator::SKIP_DOTS)) as $file) {
+        $source .= file_get_contents($file->getPathname());
+    }
+
+    preg_match_all("/__\\('((?:[^'\\\\\\\\]|\\\\\\\\.)*)'/", $source, $matches);
+
+    // The three vitals ratings and the three devices reach __() through a variable.
+    $strings = array_unique([...array_map('stripslashes', $matches[1]), 'Good', 'Needs improvement', 'Poor']);
+
+    foreach (['de', 'es', 'ro', 'ru'] as $locale) {
+        $translated = json_decode(file_get_contents(__DIR__."/../../resources/lang/{$locale}.json"), true);
+
+        expect(array_diff($strings, array_keys($translated)))->toBe([], $locale)
+            ->and(array_diff(array_keys($translated), $strings))->toBe([], $locale);
+    }
+
+    app()->setLocale('de');
+
+    expect(ReplaySessionResource::getNavigationLabel())->toBe('Session Replays');
 });

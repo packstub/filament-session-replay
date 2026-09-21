@@ -8,8 +8,8 @@ Newest first (`started_at`, descending).
 
 | Column | What it shows |
 | --- | --- |
-| **Person** | The person's label (see [People](people.md#naming-people)), "Guest" for a recording without a person, and "Impersonated by #id" underneath when someone was impersonating. Searching the table matches the person's key exactly: type `42` to find user 42. |
-| **Workspace** | The tenant's `name`, or `#id`. Only visible when the panel has no current tenant, which is the operator's view. Toggleable. |
+| **Person** | The person's label (see [People](people.md#naming-people)), "Guest" for a recording without a person, and "Impersonated by #id" underneath when someone was impersonating. Searching the table finds people by name or email, and by their key: type `42` to find user 42 (see [People](people.md#finding-people)). |
+| **Workspace** | The tenant's `name`, what `tenantLabelUsing()` returns, or `#id`. Only visible when the panel has no current tenant, which is the operator's view. Toggleable. |
 | **Started** | Relative time with the full date in the tooltip; a green badge while the recording is still receiving events. Sortable. |
 | **Length** | Wall-clock length, for example `4m 12s`. |
 | **Pages** | Page views, `wire:navigate` swaps included. Sortable. |
@@ -86,6 +86,21 @@ Gate::define('deleteSessionReplay', fn ($user, ?ReplaySession $session = null): 
 Until `viewSessionReplay` is defined, only the local environment is let in, so the resource is hidden in production until you decide.
 
 The gate is asked for the list as a whole. A rule that depends on the recording (like the one above) blocks the watch page and the data, while the row still appears in the list. To narrow the list too, scope the panel to a workspace ([Tenancy](tenancy.md)) or extend the resource and override `getEloquentQuery()`.
+
+### Rows the gate would refuse
+
+The gate decides about one recording at a time, so by itself it cannot shorten a list. When yours narrows single recordings (support may watch customers, never other staff), tell the list the same rule as a query with the core's `SessionReplay::visibleUsing()`:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+use Packstub\SessionReplay\Facades\SessionReplay;
+
+SessionReplay::visibleUsing(function (Builder $query, $viewer): void {
+    $query->whereNotIn('user_id', Staff::query()->pluck('id')->map(fn ($id) => (string) $id));
+});
+```
+
+The resource, a person's Session replays tab, the stats widget and the Watch last session action all start from it, with the person signed in to the panel as `$viewer`. Pages stay full and counts stay right because the rule runs in SQL. Opening a recording always asks the gate, with or without it.
 
 ### Policies and Filament Shield
 

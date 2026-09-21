@@ -2,14 +2,11 @@
 
 namespace Packstub\SessionReplay\Filament\Widgets;
 
-use Filament\Facades\Filament;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplaySession;
-use Packstub\SessionReplay\SessionReplayPlugin;
 
 /** The last seven days at a glance; each number opens the list with the matching filter. */
 class ReplayStatsWidget extends StatsOverviewWidget
@@ -39,13 +36,6 @@ class ReplayStatsWidget extends StatsOverviewWidget
 
     protected function query(): Builder
     {
-        $query = ReplaySession::query();
-        $tenant = Filament::getTenant();
-
-        if ($tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant()) {
-            $query->forTenant($tenant);
-        }
-
-        return $query;
+        return ReplaySessionResource::scope(ReplaySession::query());
     }
 }

@@ -3,8 +3,10 @@
 namespace Packstub\SessionReplay\Filament\Actions;
 
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
+use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplaySession;
 
@@ -32,6 +34,6 @@ class WatchLastSessionAction extends Action
 
     public static function lastSession(Model $user): ?ReplaySession
     {
-        return once(fn (): ?ReplaySession => ReplaySession::query()->forUser($user)->latest('started_at')->first());
+        return once(fn (): ?ReplaySession => SessionReplay::visibleTo(ReplaySession::query(), Filament::auth()->user())->forUser($user)->latest('started_at')->first());
     }
 }

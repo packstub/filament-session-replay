@@ -4,7 +4,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ## Unreleased
 
-First version, not tagged yet.
+First version.
 
 ### Added
 
@@ -14,4 +14,7 @@ First version, not tagged yet.
 - **Authorization.** The core's `viewSessionReplay` gate, with the recording; a registered `ReplaySession` policy takes over (Shield); `deleteSessionReplay` when the app defines it.
 - **People.** `ReplaysRelationManager`, `WatchLastSessionAction`, `ReplayStatsWidget` (`->widget()`).
 - **Masking where the field is.** `->maskInReplay()` and `->blockInReplay()` on form fields, table columns, infolist entries and layout components.
-- **Workspaces.** In a panel with tenancy the resource and the widget list the current workspace's recordings; a Workspace column everywhere else.
+- **Workspaces.** In a panel with tenancy the resource and the widget list the current workspace's recordings; a Workspace column everywhere else, named by `tenantLabelUsing()` when the tenant has no `name`.
+- **Finding people.** The table search looks in the `name` and `email` columns of the recorded people's own tables (`searchPeopleBy()`), per model and without a join, next to the exact key.
+- **Rows the gate would refuse.** The resource, the relation manager, the widget and `WatchLastSessionAction` start from the core's `SessionReplay::visibleUsing()`, so a rule that narrows single recordings narrows every list too, in SQL.
+- **Languages.** English, German, Spanish, Romanian and Russian.

@@ -22,6 +22,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
@@ -86,14 +87,68 @@ class ReplaySessionResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with('user');
+        return static::scope(parent::getEloquentQuery()->with('user'));
+    }
+
+    /**
+     * What every list of recordings in the panel starts from: the current
+     * workspace, and whatever the app told SessionReplay::visibleUsing().
+     *
+     * @param  Builder<ReplaySession>  $query
+     * @return Builder<ReplaySession>
+     */
+    public static function scope(Builder $query): Builder
+    {
         $tenant = Filament::getTenant();
 
         if ($tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant()) {
             $query->forTenant($tenant);
         }
 
-        return $query;
+        return SessionReplay::visibleTo($query, Filament::auth()->user());
+    }
+
+    /**
+     * The person's key, or what the search box holds found in the recorded
+     * people's own tables. No join: the index may live on another connection
+     * than the people, and a recording names its person by morph type and key.
+     *
+     * @param  Builder<ReplaySession>  $query
+     */
+    public static function searchPeople(Builder $query, string $search): void
+    {
+        $columns = SessionReplayPlugin::get()->getSearchPeopleBy();
+        $types = $columns === [] ? [] : ReplaySession::query()->whereNotNull('user_type')->distinct()->pluck('user_type')->all();
+
+        $query->where(function (Builder $query) use ($search, $columns, $types): void {
+            $query->where('user_id', $search);
+
+            foreach ($types as $type) {
+                $class = Relation::getMorphedModel($type) ?? $type;
+
+                if (! is_string($class) || ! is_subclass_of($class, Model::class)) {
+                    continue;
+                }
+
+                $person = new $class;
+                $known = array_values(array_filter($columns, fn (string $column): bool => $person->getConnection()->getSchemaBuilder()->hasColumn($person->getTable(), $column)));
+
+                if ($known === []) {
+                    continue;
+                }
+
+                $keys = $person->newQuery()
+                    ->whereAny($known, 'like', '%'.addcslashes($search, '%_\\').'%')
+                    ->limit(200)
+                    ->pluck($person->getKeyName())
+                    ->map(fn (mixed $key): string => (string) $key)
+                    ->all();
+
+                if ($keys !== []) {
+                    $query->orWhere(fn (Builder $query) => $query->where('user_type', $type)->whereIn('user_id', $keys));
+                }
+            }
+        });
     }
 
     protected static function hasPolicy(): bool
@@ -154,10 +209,10 @@ class ReplaySessionResource extends Resource
                     ->formatStateUsing(fn (ReplaySession $record): string => SessionReplayPlugin::get()->userLabel($record))
                     ->default('guest')
                     ->description(fn (ReplaySession $record): ?string => $record->impersonator_id ? __('Impersonated by #:id', ['id' => $record->impersonator_id]) : null)
-                    ->searchable(query: fn (Builder $query, string $search) => $query->where('user_id', $search)),
+                    ->searchable(query: fn (Builder $query, string $search) => static::searchPeople($query, $search)),
                 TextColumn::make('tenant_id')
                     ->label(__('Workspace'))
-                    ->formatStateUsing(fn (ReplaySession $record): string => (string) ($record->tenant?->getAttribute('name') ?? '#'.$record->tenant_id))
+                    ->formatStateUsing(fn (ReplaySession $record): string => (string) SessionReplayPlugin::get()->tenantLabel($record))
                     ->placeholder('·')
                     ->visible(fn (): bool => Filament::getTenant() === null)
                     ->toggleable(),

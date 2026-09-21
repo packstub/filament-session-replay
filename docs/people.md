@@ -111,4 +111,15 @@ SessionReplayPlugin::make()
 
 Return null to fall through to the defaults.
 
+## Finding people
+
+The table's search box looks for what you type in the `name` and `email` columns of your people's tables, and matches a person's key exactly. It works per model: recordings of a `User` and of an `Admin` are both found, each in its own table, and a column a table does not have is skipped. There is no join, so it also works when the recordings index lives on another connection than your users.
+
+```php
+SessionReplayPlugin::make()
+    ->searchPeopleBy(['first_name', 'last_name', 'email']);
+```
+
+`searchPeopleBy([])` leaves the search to the key alone.
+
 These pieces link to the Sessions resource, so use them in a panel where the plugin is registered with the resource on (the default).

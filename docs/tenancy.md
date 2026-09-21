@@ -13,6 +13,19 @@ This works with Filament's built-in tenancy and with anything that sets the Fila
 | A panel with tenancy (a current tenant) | The current workspace's recordings only |
 | A panel without tenancy (an operator console) | Every recording, with a **Workspace** column (the tenant's `name`, or `#id`) |
 
+### Naming workspaces
+
+The Workspace column shows the tenant's `name`. When your tenant model calls it something else:
+
+```php
+use Packstub\SessionReplay\Models\ReplaySession;
+
+SessionReplayPlugin::make()
+    ->tenantLabelUsing(fn (ReplaySession $session): ?string => $session->tenant?->company_name);
+```
+
+Return null to fall back to `name`, then `#` and the key.
+
 The resource does not use Filament's ownership relationship for this (recordings carry the workspace themselves), so your tenant model needs no `sessionReplays` relation.
 
 To list every workspace's recordings inside a panel that does have tenancy:

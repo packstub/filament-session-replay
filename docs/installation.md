@@ -90,6 +90,8 @@ SessionReplayPlugin::make()
 | `properties(array\|Closure $properties)` | `[]` | Extra properties kept on every recording of this panel, next to `panel`. A closure receives `$user`. |
 | `impersonatorUsing(Closure $callback)` | Account Switcher, when installed | Returns the key of the person who is impersonating, or null. |
 | `userLabelUsing(Closure $callback)` | see [People](people.md#naming-people) | Returns how a person is named in the table and on the watch page: `fn (ReplaySession $session): ?string`. |
+| `tenantLabelUsing(Closure $callback)` | the tenant's `name` | Returns how a workspace is named in the Workspace column: `fn (ReplaySession $session): ?string`. See [Tenancy](tenancy.md#naming-workspaces). |
+| `searchPeopleBy(array $columns)` | `['name', 'email']` | The columns of your people's tables the table search looks in. See [People](people.md#finding-people). |
 | `navigationGroup(string\|UnitEnum\|null $group)` | none | The resource's navigation group. |
 | `navigationIcon(string\|BackedEnum\|null $icon)` | `Heroicon::OutlinedPlayCircle` | The resource's navigation icon. |
 | `navigationSort(?int $sort)` | none | The resource's navigation sort. |
@@ -98,6 +100,19 @@ SessionReplayPlugin::make()
 | `scopeToTenant(bool $condition = true)` | `true` | In a panel with tenancy, list only the current workspace's recordings. See [Tenancy](tenancy.md). |
 
 `SessionReplayPlugin::get()` returns the plugin instance of the current panel.
+
+## Languages
+
+The resource, the watch page and the player ship in English, German, Spanish, Romanian and Russian and follow the app's locale. The panel's strings are JSON translations keyed by the English text, so your app's `lang/{locale}.json` overrides any of them or adds a language:
+
+```json
+{
+    "Session replays": "Opnames",
+    "Watch last session": "Bekijk laatste sessie"
+}
+```
+
+The player's strings belong to the core: `php artisan vendor:publish --tag=session-replay-translations`.
 
 ## Record in one panel, watch in another
 
