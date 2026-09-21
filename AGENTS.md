@@ -11,7 +11,7 @@ composer lint               # Pint
 composer serve              # Testbench workbench: a recorded panel on :8000/admin, signed in, recordings under Support
 ```
 
-The core is required through a path repository (`../session-replay`) until it is on Packagist; CI checks it out next to this repo with the `SESSION_REPLAY_DEPLOY_KEY` secret (a read-only deploy key on the core repo). Remove the `repositories` block, `minimum-stability: dev` and that checkout step when the core is public.
+The core comes from Packagist (`packstub/session-replay: ^1.0`). To work on both at once, add a path repository for `../session-replay` locally and do not commit it.
 
 ## Layout
 
