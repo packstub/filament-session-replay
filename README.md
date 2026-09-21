@@ -1,31 +1,44 @@
 # Filament Session Replay
 
-Session replay inside your Filament panel. Every recording made by [Session Replay for Laravel](https://github.com/packstub/session-replay) shows up in a filterable resource, plays in the panel with errors, failed Livewire requests and web vitals on the timeline, and hangs off the people it belongs to: a relation manager on your user resource, a "Watch last session" action on a row. Free and open source (MIT).
+<div class="filament-hidden">
 
-Recordings stay on your own disk and database, and who may watch them is decided by a gate your app defines.
+![Filament Session Replay — watch what happened, inside your own panel](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/banner.jpg)
+
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/packstub/filament-session-replay.svg?style=flat-square)](https://packagist.org/packages/packstub/filament-session-replay)
+[![Tests](https://img.shields.io/github/actions/workflow/status/packstub/filament-session-replay/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/packstub/filament-session-replay/actions/workflows/tests.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/packstub/filament-session-replay.svg?style=flat-square)](https://packagist.org/packages/packstub/filament-session-replay)
+[![License](https://img.shields.io/packagist/l/packstub/filament-session-replay.svg?style=flat-square)](https://github.com/packstub/filament-session-replay/blob/main/LICENSE.md)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-ea4aaa?style=flat-square&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/icaliman)
+
+</div>
+
+Session replay inside your Filament panel. "The form did nothing when I clicked save" becomes a replay you watch next to the user it belongs to, with the failed Livewire request, the JavaScript error and the rage click marked on the timeline. Recordings stay on your own disk and database, and who may watch them is a gate your app defines. Free and open source (MIT), built on [Session Replay for Laravel](https://github.com/packstub/session-replay) and [rrweb](https://github.com/rrweb-io/rrweb).
 
 ## Features
 
-- **Recording without a directive.** Register the plugin and the panel's pages are recorded, with the panel's own guard, the current Filament tenant, the panel id and the impersonator signed into the recording.
-- **A Sessions resource.** Person, workspace, start, length, pages, errors, rage clicks, vitals, device, first page, pinned, size. Filters for errors, slow pages, rage clicks, impersonated sessions, pinned, device, first page and start date.
-- **The player in the panel.** The facts of the recording, the rrweb player with coloured markers on the timeline, a marker list that seeks on click, Pin, Export and Delete.
-- **Around your users.** `ReplaysRelationManager` for a person's page, `WatchLastSessionAction` for a row or a header, `ReplayStatsWidget` for the dashboard.
-- **Masking where the field is.** `->maskInReplay()` and `->blockInReplay()` on form fields, table columns, infolist entries and layout components.
-- **Workspace-aware.** In a panel with tenancy the list shows the current workspace; an operator panel shows all of them with a Workspace column.
-- **One rule for access.** The `viewSessionReplay` gate of the core, with the recording as argument. A policy for `ReplaySession` takes over when you register one, which is how Filament Shield permissions plug in.
+- **[Recording without a directive](#recording-a-panel)** — register the plugin and the panel's pages are recorded, with the panel's own guard, the current Filament tenant, the panel id and the impersonator signed into the recording.
+- **[A Sessions resource](#the-sessions-resource)** — person, workspace, start, length, pages, errors, rage clicks, vitals, device, first page, pinned, size. Search by name or email; filters for errors, slow pages, rage clicks, impersonated sessions, pinned, device, first page and start date.
+- **[The player in the panel](#watching-a-recording)** — the facts of the recording, the rrweb player with coloured markers on the timeline, a marker list that seeks on click, Pin, Export and Delete.
+- **[Around your users](#around-your-users)** — `ReplaysRelationManager` for a person's page, `WatchLastSessionAction` for a row or a header, `ReplayStatsWidget` for the dashboard.
+- **[Masking where the field is](#masking-where-the-field-is)** — `->maskInReplay()` and `->blockInReplay()` on form fields, table columns, infolist entries and layout components. Every input is masked before you do anything.
+- **[Workspace-aware](#workspaces-and-impersonation)** — in a panel with tenancy the list shows the current workspace; an operator panel shows all of them with a Workspace column, and impersonated sessions are flagged.
+- **[One rule for access](#who-may-watch)** — the `viewSessionReplay` gate of the core, with the recording as argument. A policy for `ReplaySession` takes over when you register one, which is how Filament Shield permissions plug in.
+- **Dark mode, five languages** — replays come out the way the page looked, dark mode included; the panel pages ship in English, German, Spanish, Romanian and Russian.
 
-## Requirements
+## Compatibility
 
-PHP 8.3+, Laravel 12 or 13, Filament 5. Composer installs `packstub/session-replay` for you.
+| Filament Session Replay | Filament | Laravel | PHP |
+| --- | --- | --- | --- |
+| 1.x | 5.x | 12, 13 | 8.3+ |
 
-## Quick start
+## Installation
 
 ```bash
 composer require packstub/filament-session-replay
 php artisan session-replay:install
 ```
 
-Register the plugin in your panel provider:
+Composer brings `packstub/session-replay` along; the install command publishes its config, runs the migrations and publishes `App\Providers\SessionReplayServiceProvider` with the gate in it. Register the plugin in your panel provider:
 
 ```php
 use Packstub\SessionReplay\SessionReplayPlugin;
@@ -38,7 +51,97 @@ public function panel(Panel $panel): Panel
 }
 ```
 
-Say who may watch, in the `App\Providers\SessionReplayServiceProvider` the install command published:
+Schedule the clean-up:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('session-replay:prune')->daily();
+```
+
+Open the panel, click around, then open **Session replays** in the navigation. [Read more](https://packstub.dev/docs/filament-session-replay/installation)
+
+## Recording a panel
+
+The recorder is added through a render hook, so there is no directive to place. It records with what only the panel knows: the panel's guard, the current tenant, the panel id and who is impersonating. The pages recordings are watched on are never recorded. Record one panel and watch in another by registering the plugin twice:
+
+```php
+// The customer panel is recorded.
+SessionReplayPlugin::make()->resource(false);
+
+// The operator panel is where recordings are watched.
+SessionReplayPlugin::make()->record(false)->widget();
+```
+
+`->record(fn (?Model $user): bool => ! $user?->is_staff)` narrows it per person. What recording costs (34 KB for a 50-row table page, 0.2 KB per idle minute) is measured in the [installation guide](https://packstub.dev/docs/filament-session-replay/installation#what-recording-a-panel-costs).
+
+## The Sessions resource
+
+![The Session replays resource in an operator panel: person, workspace, start, length, pages, errors and vitals of every recording, an impersonated session flagged](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/sessions.png)
+
+Newest first, searchable by a person's name, email or key, with the numbers that tell you which recording to open: errors, rage clicks and web vitals are indexed when the recording arrives, so filtering never opens a file.
+
+![The filters of the Session replays table: errors, slow pages, rage clicks, impersonated, pinned, device, first page and start date](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/filters.png)
+
+[Read more](https://packstub.dev/docs/filament-session-replay/watching)
+
+## Watching a recording
+
+![The watch page: the facts of the recording, the player paused on an edit modal where Save changes was clicked again and again, and the marker list with failed Livewire requests, the rage click and a TypeError](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/watch.png)
+
+The watch page shows the facts, the player and the markers: page views, failed Livewire requests, uncaught errors, `console.error`, web vitals and rage clicks. A click on a marker seeks to a second before it, and `?t=83` opens a replay at 1:23, which makes a good link for a ticket. **Pin** keeps a recording out of pruning, **Export** downloads it as one JSON file with its stylesheets, **Delete** removes it with its files. [Read more](https://packstub.dev/docs/filament-session-replay/watching#the-watch-page)
+
+## Around your users
+
+![A customer's page in the panel with a Session replays tab listing that person's recordings](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/person-replays.png)
+
+```php
+use Packstub\SessionReplay\Concerns\HasSessionReplays;
+use Packstub\SessionReplay\Filament\Actions\WatchLastSessionAction;
+use Packstub\SessionReplay\Filament\Resources\ReplaySessions\RelationManagers\ReplaysRelationManager;
+
+class User extends Authenticatable
+{
+    use HasSessionReplays;
+}
+
+// In your user resource:
+public static function getRelations(): array
+{
+    return [ReplaysRelationManager::class];
+}
+
+// On a row or in a page header:
+WatchLastSessionAction::make(),
+```
+
+![A customers table with a Watch last session action on the rows of people who have a recording](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/watch-last-session.png)
+
+`->widget()` adds the last seven days to the dashboard, each number linked to the filtered list:
+
+![The stats widget: recordings in the last 7 days, with errors, slow pages](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/stats-widget.png)
+
+[Read more](https://packstub.dev/docs/filament-session-replay/people)
+
+## Masking where the field is
+
+Every input is masked by default and passwords always are. For what a page *displays*, say so where the field is declared:
+
+```php
+TextColumn::make('customer')->maskInReplay(),
+TextEntry::make('iban')->maskInReplay(),
+Section::make('Payout details')->blockInReplay(),
+```
+
+![A replayed Orders table whose Customer column shows asterisks while the rest of the page stays readable](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/masking.png)
+
+Mask keeps the page readable for whoever watches (the value is there, its content is not); block records an empty box of the same size. Masking happens in the browser, before anything is uploaded. [Read more](https://packstub.dev/docs/filament-session-replay/masking)
+
+## Workspaces and impersonation
+
+In a panel with tenancy the resource and the widget list the current workspace's recordings; a panel without a tenant lists all of them with a **Workspace** column (`->tenantLabelUsing()` when your tenant has no `name`). Sessions made while impersonating carry who was behind them: Packstub's [Account Switcher](https://github.com/packstub/filament-account-switcher) is detected, `->impersonatorUsing()` covers anything else. Database-per-tenant apps keep the index on the central connection. [Read more](https://packstub.dev/docs/filament-session-replay/tenancy)
+
+## Who may watch
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -49,15 +152,7 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
-Schedule the clean-up:
-
-```php
-use Illuminate\Support\Facades\Schedule;
-
-Schedule::command('session-replay:prune')->daily();
-```
-
-Open the panel, click around, then open **Session replays** in the navigation.
+The gate is asked without a recording for the list and with it for a single replay and every file behind it, in the panel and on the core's data routes alike. Until it is defined only the local environment is let in. A policy registered for `ReplaySession` takes over inside the panel (Filament Shield), `deleteSessionReplay` separates deleting from watching, and `SessionReplay::visibleUsing()` keeps rows the gate would refuse out of every list. [Read more](https://packstub.dev/docs/filament-session-replay/watching#who-may-do-what)
 
 ## Two packages, one picture
 
@@ -66,24 +161,39 @@ Open the panel, click around, then open **Session replays** in the navigation.
 | [`packstub/session-replay`](https://github.com/packstub/session-replay) | Records (rrweb, masked inputs, markers), ingests, stores gzip chunks on your disk with an index in your database, prunes, links the recording into Laravel's log context, and guards every byte with the `viewSessionReplay` gate. Works in any Laravel app. |
 | `packstub/filament-session-replay` (this one) | The panel experience: recording wired to the panel's guard and tenant, the Sessions resource, the watch page, the relation manager, the action, the widget and the masking macros. |
 
-Everything about privacy, storage, consent and configuration lives in the core and applies here unchanged.
+Everything about privacy, storage, consent and configuration lives in the core and applies here unchanged. Hosted replay products are a great fit for product analytics and funnels; this pair is for replay inside your own app, and the two run happily side by side.
 
 ## Documentation
 
 | Guide | What it covers |
 | --- | --- |
-| [Overview](docs/README.md) | What you get, at a glance |
-| [Installation](docs/installation.md) | Install, register, the gate, the plugin's options, recording in one panel and watching in another |
-| [Watching](docs/watching.md) | The resource, its filters, the watch page, Pin, Export, Delete, who may do what |
-| [Masking](docs/masking.md) | `maskInReplay()` and `blockInReplay()` |
-| [People](docs/people.md) | The relation manager, "Watch last session", the stats widget, naming people |
-| [Tenancy](docs/tenancy.md) | Workspaces, operator panels, database-per-tenant apps, impersonation |
+| [Overview](https://packstub.dev/docs/filament-session-replay) | What you get, at a glance |
+| [Installation](https://packstub.dev/docs/filament-session-replay/installation) | Install, register, the gate, the plugin's options, languages, recording in one panel and watching in another |
+| [Watching](https://packstub.dev/docs/filament-session-replay/watching) | The resource, its filters, the watch page, Pin, Export, Delete, who may do what |
+| [Masking](https://packstub.dev/docs/filament-session-replay/masking) | `maskInReplay()` and `blockInReplay()` |
+| [People](https://packstub.dev/docs/filament-session-replay/people) | The relation manager, "Watch last session", the stats widget, naming and finding people |
+| [Tenancy](https://packstub.dev/docs/filament-session-replay/tenancy) | Workspaces, operator panels, database-per-tenant apps, impersonation |
 
 The core's guides cover the rest: [Recording](https://packstub.dev/docs/session-replay/recording), [Privacy](https://packstub.dev/docs/session-replay/privacy), [Watching replays](https://packstub.dev/docs/session-replay/watching), [Storage](https://packstub.dev/docs/session-replay/storage), [Error tracking](https://packstub.dev/docs/session-replay/error-tracking), [Configuration](https://packstub.dev/docs/session-replay/configuration).
 
+## Testing
+
+```bash
+composer test
+```
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
+## Security
+
+Please report security issues to support@packstub.dev instead of the issue tracker.
+
 ## Credits
 
-Recording and playback are [rrweb](https://github.com/rrweb-io/rrweb) (MIT), through the core package.
+- [Packstub](https://packstub.dev)
+- Recording and playback are [rrweb](https://github.com/rrweb-io/rrweb) (MIT), through the core package.
 
 ## License
 

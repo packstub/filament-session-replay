@@ -5,6 +5,7 @@ namespace Packstub\SessionReplay\Filament\Resources\ReplaySessions\RelationManag
 use Filament\Actions\Action;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\Column;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
@@ -37,7 +38,11 @@ class ReplaysRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return ReplaySessionResource::table($table)
+        $table = ReplaySessionResource::table($table);
+
+        // Every row is the same person here.
+        return $table
+            ->columns(array_filter($table->getColumns(), fn (Column $column): bool => $column->getName() !== 'user_id'))
             ->recordActions([
                 Action::make('watch')
                     ->label(__('Watch'))

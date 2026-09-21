@@ -26,6 +26,8 @@ it('shows a person\'s recordings on their own page', function () {
     Livewire::test(ReplaysRelationManager::class, ['ownerRecord' => $customer, 'pageClass' => EditUser::class])
         ->assertCanSeeTableRecords([$theirs])
         ->assertCanNotSeeTableRecords([$someoneElses])
+        ->assertTableColumnDoesNotExist('user_id')
+        ->assertTableColumnExists('started_at')
         ->assertTableActionHasUrl('watch', ReplaySessionResource::getUrl('view', ['record' => $theirs]), $theirs);
 });
 

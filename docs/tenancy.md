@@ -6,6 +6,8 @@ When the plugin renders the recorder, it signs the current Filament tenant (`Fil
 
 This works with Filament's built-in tenancy and with anything that sets the Filament tenant, [Packstub's Filament Tenancy](https://packstub.dev/docs/filament-tenancy) included.
 
+A recording belongs to one workspace. When someone switches workspace in the tenant menu, the next page starts a new recording, so a workspace's list never holds pages of another one.
+
 ## What each panel lists
 
 | Panel | The Sessions resource and the stats widget show |

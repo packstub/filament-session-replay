@@ -237,3 +237,13 @@ it('ships every string it shows in German, Spanish, Romanian and Russian', funct
 
     expect(ReplaySessionResource::getNavigationLabel())->toBe('Session Replays');
 });
+
+it('shows the path of the app\'s own pages and the host of any other', function () {
+    config()->set('app.url', 'https://app.test');
+
+    expect(ReplaySessionResource::shortUrl('https://app.test/admin/orders?page=2'))->toBe('/admin/orders?page=2')
+        ->and(ReplaySessionResource::shortUrl('https://app.test/admin?at=10:30'))->toBe('/admin?at=10:30')
+        ->and(ReplaySessionResource::shortUrl('https://app.test'))->toBe('/')
+        ->and(ReplaySessionResource::shortUrl('http://app.test:8080/admin'))->toBe('/admin')
+        ->and(ReplaySessionResource::shortUrl('https://shop.example.com/cart'))->toBe('shop.example.com/cart');
+});

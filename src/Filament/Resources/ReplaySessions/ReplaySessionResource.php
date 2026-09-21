@@ -256,16 +256,17 @@ class ReplaySessionResource extends Resource
                     ->toggleable(),
                 TextColumn::make('entry_url')
                     ->label(__('First page'))
-                    ->formatStateUsing(fn (string $state): string => Str::after($state, '://'))
+                    ->formatStateUsing(fn (string $state): string => static::shortUrl($state))
                     ->limit(40)
                     ->tooltip(fn (ReplaySession $record): ?string => $record->entry_url)
                     ->color('gray')
                     ->toggleable(),
                 IconColumn::make('pinned')
                     ->label(__('Pinned'))
-                    ->boolean()
-                    ->trueIcon(Heroicon::Bookmark)
-                    ->falseIcon(null)
+                    // A bookmark on the pinned ones and nothing on the rest: the cross a boolean column puts in every other row reads as a fault.
+                    ->state(fn (ReplaySession $record): ?string => $record->pinned ? 'pinned' : null)
+                    ->icon(Heroicon::Bookmark)
+                    ->color('primary')
                     ->toggleable(),
                 TextColumn::make('bytes')
                     ->label(__('Size'))
@@ -309,6 +310,21 @@ class ReplaySessionResource extends Resource
             ->emptyStateHeading(__('No recordings yet'))
             ->emptyStateDescription(__('Recordings appear here as soon as someone uses a recorded page.'))
             ->emptyStateIcon(Heroicon::OutlinedPlayCircle);
+    }
+
+    /** The path alone for a page of this app (the host says nothing there), host and path for any other. */
+    public static function shortUrl(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (is_string($host) && in_array($host, [request()->getHost(), parse_url((string) config('app.url'), PHP_URL_HOST)], true)) {
+            $port = parse_url($url, PHP_URL_PORT);
+            $path = Str::after(Str::after($url, '://'), $host.($port ? ':'.$port : ''));
+
+            return $path === '' ? '/' : $path;
+        }
+
+        return Str::after($url, '://');
     }
 
     /** A pinned recording is never pruned. */
