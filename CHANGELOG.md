@@ -7,6 +7,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 ### Changed
 
 - **Docs.** A shorter Features list in the README and on the docs index, one line per area.
+- **Tests.** Session Replay 1.0.0-beta.2's `privacy.anonymous` and `except_routes` checked in a real panel: the token keeps the workspace and drops the person and the impersonator, and the default route-name patterns match the password-reset and verification pages Filament registers.
 
 ## 1.0.0-beta.1 — 2026-10-02
 
