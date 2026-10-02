@@ -18,14 +18,14 @@ Session replay inside your Filament panel. "The form did nothing when I clicked 
 
 ## Features
 
-- **[Recording without a directive](#recording-a-panel)** — register the plugin and the panel's pages are recorded, with the panel's own guard, the current Filament tenant, the panel id and the impersonator signed into the recording.
-- **[A Sessions resource](#the-sessions-resource)** — person, workspace, start, length, pages, errors, rage clicks, vitals, device, first page, pinned, size. Search by name or email; filters for errors, slow pages, rage clicks, impersonated sessions, pinned, device, first page and start date.
-- **[The player in the panel](#watching-a-recording)** — the facts of the recording, the rrweb player with coloured markers on the timeline, a marker list that seeks on click, Pin, Export and Delete.
-- **[Around your users](#around-your-users)** — `ReplaysRelationManager` for a person's page, `WatchLastSessionAction` for a row or a header, `ReplayStatsWidget` for the dashboard.
-- **[Masking where the field is](#masking-where-the-field-is)** — `->maskInReplay()` and `->blockInReplay()` on form fields, table columns, infolist entries and layout components. Every input is masked before you do anything.
-- **[Workspace-aware](#workspaces-and-impersonation)** — in a panel with tenancy the list shows the current workspace; an operator panel shows all of them with a Workspace column, and impersonated sessions are flagged.
-- **[One rule for access](#who-may-watch)** — the `viewSessionReplay` gate of the core, with the recording as argument. A policy for `ReplaySession` takes over when you register one, which is how Filament Shield permissions plug in.
-- **Dark mode, five languages** — replays come out the way the page looked, dark mode included; the panel pages ship in English, German, Spanish, Romanian and Russian.
+- **[Recording without a directive](#recording-a-panel)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
+- **[A Sessions resource](#the-sessions-resource)**: every recording with its errors, rage clicks and vitals, searchable and filterable.
+- **[The player in the panel](#watching-a-recording)**: markers on the timeline and in a list that seeks on click, with Pin, Export and Delete.
+- **[Around your users](#around-your-users)**: a relation manager, a "Watch last session" action and a dashboard widget.
+- **[Masking where the field is](#masking-where-the-field-is)**: `->maskInReplay()` and `->blockInReplay()` on fields, columns, entries and sections.
+- **[Workspace-aware](#workspaces-and-impersonation)**: each workspace sees its own recordings, an operator panel sees them all, impersonated sessions are flagged.
+- **[One rule for access](#who-may-watch)**: the core's `viewSessionReplay` gate, or your own policy, so Filament Shield permissions plug in.
+- **Dark mode, five languages**: replays look the way the page did, and the panel pages speak English, German, Spanish, Romanian and Russian.
 
 ## Compatibility
 
