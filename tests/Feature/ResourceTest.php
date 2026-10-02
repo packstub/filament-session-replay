@@ -37,6 +37,7 @@ it('passes the recording to the gate for the watch page', function () {
     $this->get(ReplaySessionResource::getUrl('view', ['record' => $customers]))
         ->assertOk()
         ->assertSee('data-session-replay-player', false)
+        ->assertSee('--sr-pointer: var(--primary-500)', false)
         ->assertSee(route('session-replay.manifest', $customers), false);
 
     $this->get(ReplaySessionResource::getUrl('view', ['record' => $colleagues]))->assertForbidden();
