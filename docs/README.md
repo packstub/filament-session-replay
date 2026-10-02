@@ -1,10 +1,10 @@
 # Filament Session Replay
 
-Session replay inside a Filament panel: the recordings of [Session Replay for Laravel](https://packstub.dev/docs/session-replay) in a filterable resource, the player with markers on the timeline, and the pieces that connect recordings to your users. Free and open source (MIT).
+Session replay inside a Filament panel: the recordings of [Session Replay for Laravel](https://github.com/packstub/session-replay/tree/main/docs) in a filterable resource, the player with markers on the timeline, and the pieces that connect recordings to your users. Free and open source (MIT).
 
 - Repository: [github.com/packstub/filament-session-replay](https://github.com/packstub/filament-session-replay)
 - Support: [GitHub issues](https://github.com/packstub/filament-session-replay/issues)
-- Core package: [Session Replay for Laravel](https://packstub.dev/docs/session-replay), installed with this one
+- Core package: [Session Replay for Laravel](https://github.com/packstub/session-replay/tree/main/docs), installed with this one
 
 ## What you get
 
@@ -30,4 +30,4 @@ Privacy defaults, consent, storage, pruning, limits and the log context come fro
 | [People](people.md) | `HasSessionReplays`, the relation manager, `WatchLastSessionAction`, `ReplayStatsWidget`, naming people |
 | [Tenancy](tenancy.md) | Workspaces, operator panels, database-per-tenant apps, the Account Switcher and impersonation |
 
-From the core: [Recording](https://packstub.dev/docs/session-replay/recording), [Privacy](https://packstub.dev/docs/session-replay/privacy), [Watching replays](https://packstub.dev/docs/session-replay/watching), [Storage](https://packstub.dev/docs/session-replay/storage), [Error tracking](https://packstub.dev/docs/session-replay/error-tracking), [Configuration](https://packstub.dev/docs/session-replay/configuration).
+From the core: [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md), [Privacy](https://github.com/packstub/session-replay/blob/main/docs/privacy.md), [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md), [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md), [Error tracking](https://github.com/packstub/session-replay/blob/main/docs/error-tracking.md), [Configuration](https://github.com/packstub/session-replay/blob/main/docs/configuration.md).

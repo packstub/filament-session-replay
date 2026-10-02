@@ -63,7 +63,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('session-replay:prune')->daily();
 ```
 
-Open the panel, click around, then open **Session replays** in the navigation. [Read more](https://packstub.dev/docs/filament-session-replay/installation)
+Open the panel, click around, then open **Session replays** in the navigation. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/installation.md)
 
 ## Recording a panel
 
@@ -77,7 +77,7 @@ SessionReplayPlugin::make()->resource(false);
 SessionReplayPlugin::make()->record(false)->widget();
 ```
 
-`->record(fn (?Model $user): bool => ! $user?->is_staff)` narrows it per person. What recording costs (34 KB for a 50-row table page, 0.2 KB per idle minute) is measured in the [installation guide](https://packstub.dev/docs/filament-session-replay/installation#what-recording-a-panel-costs).
+`->record(fn (?Model $user): bool => ! $user?->is_staff)` narrows it per person. What recording costs (34 KB for a 50-row table page, 0.2 KB per idle minute) is measured in the [installation guide](https://github.com/packstub/filament-session-replay/blob/main/docs/installation.md#what-recording-a-panel-costs).
 
 ## The Sessions resource
 
@@ -87,13 +87,13 @@ Newest first, searchable by a person's name, email or key, with the numbers that
 
 ![The filters of the Session replays table: errors, slow pages, rage clicks, impersonated, pinned, device, first page and start date](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/filters.png)
 
-[Read more](https://packstub.dev/docs/filament-session-replay/watching)
+[Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md)
 
 ## Watching a recording
 
 ![The watch page: the facts of the recording, the player paused on an edit modal where Save changes was clicked again and again, and the marker list with failed Livewire requests, the rage click and a TypeError](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/watch.png)
 
-The watch page shows the facts, the player and the markers: page views, failed Livewire requests, uncaught errors, `console.error`, web vitals and rage clicks. A click on a marker seeks to a second before it, and `?t=83` opens a replay at 1:23, which makes a good link for a ticket. **Pin** keeps a recording out of pruning, **Export** downloads it as one JSON file with its stylesheets, **Delete** removes it with its files. [Read more](https://packstub.dev/docs/filament-session-replay/watching#the-watch-page)
+The watch page shows the facts, the player and the markers: page views, failed Livewire requests, uncaught errors, `console.error`, web vitals and rage clicks. A click on a marker seeks to a second before it, and `?t=83` opens a replay at 1:23, which makes a good link for a ticket. **Pin** keeps a recording out of pruning, **Export** downloads it as one JSON file with its stylesheets, **Delete** removes it with its files. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md#the-watch-page)
 
 ## Around your users
 
@@ -125,7 +125,7 @@ WatchLastSessionAction::make(),
 
 ![The stats widget: recordings in the last 7 days, with errors, slow pages](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/stats-widget.png)
 
-[Read more](https://packstub.dev/docs/filament-session-replay/people)
+[Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/people.md)
 
 ## Masking where the field is
 
@@ -139,11 +139,11 @@ Section::make('Payout details')->blockInReplay(),
 
 ![A replayed Orders table whose Customer column shows asterisks while the rest of the page stays readable](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/masking.png)
 
-Mask keeps the page readable for whoever watches (the value is there, its content is not); block records an empty box of the same size. Masking happens in the browser, before anything is uploaded. [Read more](https://packstub.dev/docs/filament-session-replay/masking)
+Mask keeps the page readable for whoever watches (the value is there, its content is not); block records an empty box of the same size. Masking happens in the browser, before anything is uploaded. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/masking.md)
 
 ## Workspaces and impersonation
 
-In a panel with tenancy the resource and the widget list the current workspace's recordings; a panel without a tenant lists all of them with a **Workspace** column (`->tenantLabelUsing()` when your tenant has no `name`). Sessions made while impersonating carry who was behind them: Packstub's [Account Switcher](https://github.com/packstub/filament-account-switcher) is detected, `->impersonatorUsing()` covers anything else. Database-per-tenant apps keep the index on the central connection. [Read more](https://packstub.dev/docs/filament-session-replay/tenancy)
+In a panel with tenancy the resource and the widget list the current workspace's recordings; a panel without a tenant lists all of them with a **Workspace** column (`->tenantLabelUsing()` when your tenant has no `name`). Sessions made while impersonating carry who was behind them: Packstub's [Account Switcher](https://github.com/packstub/filament-account-switcher) is detected, `->impersonatorUsing()` covers anything else. Database-per-tenant apps keep the index on the central connection. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/tenancy.md)
 
 ## Who may watch
 
@@ -156,7 +156,7 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
-The gate is asked without a recording for the list and with it for a single replay and every file behind it, in the panel and on the core's data routes alike. Until it is defined only the local environment is let in. A policy registered for `ReplaySession` takes over inside the panel (Filament Shield), `deleteSessionReplay` separates deleting from watching, and `SessionReplay::visibleUsing()` keeps rows the gate would refuse out of every list. [Read more](https://packstub.dev/docs/filament-session-replay/watching#who-may-do-what)
+The gate is asked without a recording for the list and with it for a single replay and every file behind it, in the panel and on the core's data routes alike. Until it is defined only the local environment is let in. A policy registered for `ReplaySession` takes over inside the panel (Filament Shield), `deleteSessionReplay` separates deleting from watching, and `SessionReplay::visibleUsing()` keeps rows the gate would refuse out of every list. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md#who-may-do-what)
 
 ## Two packages, one picture
 
@@ -171,14 +171,14 @@ Everything about privacy, storage, consent and configuration lives in the core a
 
 | Guide | What it covers |
 | --- | --- |
-| [Overview](https://packstub.dev/docs/filament-session-replay) | What you get, at a glance |
-| [Installation](https://packstub.dev/docs/filament-session-replay/installation) | Install, register, the gate, the plugin's options, languages, recording in one panel and watching in another |
-| [Watching](https://packstub.dev/docs/filament-session-replay/watching) | The resource, its filters, the watch page, Pin, Export, Delete, who may do what |
-| [Masking](https://packstub.dev/docs/filament-session-replay/masking) | `maskInReplay()` and `blockInReplay()` |
-| [People](https://packstub.dev/docs/filament-session-replay/people) | The relation manager, "Watch last session", the stats widget, naming and finding people |
-| [Tenancy](https://packstub.dev/docs/filament-session-replay/tenancy) | Workspaces, operator panels, database-per-tenant apps, impersonation |
+| [Overview](https://github.com/packstub/filament-session-replay/tree/main/docs) | What you get, at a glance |
+| [Installation](https://github.com/packstub/filament-session-replay/blob/main/docs/installation.md) | Install, register, the gate, the plugin's options, languages, recording in one panel and watching in another |
+| [Watching](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md) | The resource, its filters, the watch page, Pin, Export, Delete, who may do what |
+| [Masking](https://github.com/packstub/filament-session-replay/blob/main/docs/masking.md) | `maskInReplay()` and `blockInReplay()` |
+| [People](https://github.com/packstub/filament-session-replay/blob/main/docs/people.md) | The relation manager, "Watch last session", the stats widget, naming and finding people |
+| [Tenancy](https://github.com/packstub/filament-session-replay/blob/main/docs/tenancy.md) | Workspaces, operator panels, database-per-tenant apps, impersonation |
 
-The core's guides cover the rest: [Recording](https://packstub.dev/docs/session-replay/recording), [Privacy](https://packstub.dev/docs/session-replay/privacy), [Watching replays](https://packstub.dev/docs/session-replay/watching), [Storage](https://packstub.dev/docs/session-replay/storage), [Error tracking](https://packstub.dev/docs/session-replay/error-tracking), [Configuration](https://packstub.dev/docs/session-replay/configuration).
+The core's guides cover the rest: [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md), [Privacy](https://github.com/packstub/session-replay/blob/main/docs/privacy.md), [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md), [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md), [Error tracking](https://github.com/packstub/session-replay/blob/main/docs/error-tracking.md), [Configuration](https://github.com/packstub/session-replay/blob/main/docs/configuration.md).
 
 ## Testing
 

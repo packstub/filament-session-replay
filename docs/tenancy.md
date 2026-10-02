@@ -99,7 +99,7 @@ SESSION_REPLAY_DB_CONNECTION=central
 php artisan vendor:publish --tag=session-replay-migrations
 ```
 
-Then run the published migrations where your central migrations live. The models and the migrations both follow `storage.connection`. The core's [Storage guide](https://packstub.dev/docs/session-replay/storage#multi-tenant-apps) has the details.
+Then run the published migrations where your central migrations live. The models and the migrations both follow `storage.connection`. The core's [Storage guide](https://github.com/packstub/session-replay/blob/main/docs/storage.md#multi-tenant-apps) has the details.
 
 The Workspace column and the `tenant` relation resolve the tenant model through its morph class, so the tenant model itself should live on the central connection too, which is where workspace records normally are.
 

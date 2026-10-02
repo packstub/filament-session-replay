@@ -48,7 +48,7 @@ The title is the person, the subheading the start time.
 - **The player**: the core's `<x-session-replay::player>` inside a `wire:ignore` wrapper, so a Livewire re-render of the page leaves it alone. Play, speed (1x to 8x), skip inactivity and fullscreen. Markers are drawn on the timeline in their colour.
 - **The marker list** next to the player: one chip per kind of marker with its count (Page, Error, Request, Console, Rage click, Vital, Custom) to show or hide that kind, and the markers themselves with their time. A click seeks to a second before the moment. Vitals start hidden.
 
-Adding `?t=83` to the URL opens the replay at 1:23, which is handy in a ticket. The marker kinds, their colours and the player's events are described in the core's [Watching replays](https://packstub.dev/docs/session-replay/watching#the-player).
+Adding `?t=83` to the URL opens the replay at 1:23, which is handy in a ticket. The marker kinds, their colours and the player's events are described in the core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-player).
 
 ### Header actions
 

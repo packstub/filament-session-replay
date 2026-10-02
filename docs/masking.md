@@ -58,6 +58,6 @@ The macros only add the core's attributes, so anything the macros do not reach w
 <div data-replay-block>…</div>
 ```
 
-In a custom Filament view, column or widget, put the attribute on your own element. `data-replay-ignore` (no input events recorded for an element), the selectors behind the attributes and `privacy.mask_all_text` for layout-only recordings are described in the core's [Privacy guide](https://packstub.dev/docs/session-replay/privacy#mask-block-ignore).
+In a custom Filament view, column or widget, put the attribute on your own element. `data-replay-ignore` (no input events recorded for an element), the selectors behind the attributes and `privacy.mask_all_text` for layout-only recordings are described in the core's [Privacy guide](https://github.com/packstub/session-replay/blob/main/docs/privacy.md#mask-block-ignore).
 
 Masking happens in the browser, before anything is uploaded: masked text and blocked content never reach your server's recordings. It applies to recordings made after the change; existing recordings keep what they recorded.

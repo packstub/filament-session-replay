@@ -18,7 +18,7 @@ php artisan session-replay:install
 
 While both are in beta, require the core with `@beta` too: Composer takes a beta of a dependency only when your app asks for it.
 
-The install command belongs to the core package. It publishes `config/session-replay.php`, offers to run the migrations and publishes `app/Providers/SessionReplayServiceProvider.php` with the gate in it. The core's [installation guide](https://packstub.dev/docs/session-replay/installation) describes each step.
+The install command belongs to the core package. It publishes `config/session-replay.php`, offers to run the migrations and publishes `app/Providers/SessionReplayServiceProvider.php` with the gate in it. The core's [installation guide](https://github.com/packstub/session-replay/blob/main/docs/installation.md) describes each step.
 
 ## Register the plugin
 
@@ -43,7 +43,7 @@ That is all a panel needs. You do not add `@sessionReplay` to a panel: the plugi
 | The `panel` property | The panel's id, kept in the recording's `properties` |
 | The impersonator | [Account Switcher](tenancy.md#impersonation), or your own `impersonatorUsing()` |
 
-Everything else that decides whether a request is recorded (the master switch, `except`, `guests`, `SessionReplay::recordWhen()`, the sample rate, consent) is the core's and works the same in a panel. See [Recording](https://packstub.dev/docs/session-replay/recording). Guests are not recorded by default, so the login page stays out of recordings.
+Everything else that decides whether a request is recorded (the master switch, `except`, `guests`, `SessionReplay::recordWhen()`, the sample rate, consent) is the core's and works the same in a panel. See [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md). Guests are not recorded by default, so the login page stays out of recordings.
 
 The pages of the Sessions resource are never recorded: someone watching recordings is not recorded doing it.
 
@@ -62,7 +62,7 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
-The gate is called without a recording for the list and with it for a single replay and every file behind it. The core's [Watching replays](https://packstub.dev/docs/session-replay/watching#the-gate) explains it with examples; [Watching](watching.md#who-may-do-what) covers policies and Filament Shield.
+The gate is called without a recording for the list and with it for a single replay and every file behind it. The core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-gate) explains it with examples; [Watching](watching.md#who-may-do-what) covers policies and Filament Shield.
 
 ## Schedule the clean-up
 
@@ -72,7 +72,7 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('session-replay:prune')->daily();
 ```
 
-Recordings older than `retention.days` (30 by default) are deleted with their files; pinned recordings stay. See [Storage](https://packstub.dev/docs/session-replay/storage#pruning).
+Recordings older than `retention.days` (30 by default) are deleted with their files; pinned recordings stay. See [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md#pruning).
 
 ## Plugin options
 
@@ -105,7 +105,7 @@ SessionReplayPlugin::make()
 
 ## What recording a panel costs
 
-Measured on a Filament 5 panel: a table page of 50 rows is a 34 KB snapshot, an open page nobody touches adds 0.2 KB per minute, the same table polling every two seconds 8 KB per minute, and each re-render of the table, modal or page change 10 to 30 KB. The Filament stylesheet is stored once for every recording. With the CPU slowed down four times, interaction latency was the same with and without the recorder. Dark mode, modals, notifications, `wire:navigate`, the rich editor and file uploads replay as they looked. As a rough plan, someone opening four to six pages a minute stores 65 to 100 KB per minute on the disk and about 7 KB per minute of index rows in the database. The full table and the monthly arithmetic are in the core's [Storage](https://packstub.dev/docs/session-replay/storage#what-to-expect) page, and the lab that produced it is in this repository (`workbench/lab/measure.mjs`) if you want numbers for your own pages.
+Measured on a Filament 5 panel: a table page of 50 rows is a 34 KB snapshot, an open page nobody touches adds 0.2 KB per minute, the same table polling every two seconds 8 KB per minute, and each re-render of the table, modal or page change 10 to 30 KB. The Filament stylesheet is stored once for every recording. With the CPU slowed down four times, interaction latency was the same with and without the recorder. Dark mode, modals, notifications, `wire:navigate`, the rich editor and file uploads replay as they looked. As a rough plan, someone opening four to six pages a minute stores 65 to 100 KB per minute on the disk and about 7 KB per minute of index rows in the database. The full table and the monthly arithmetic are in the core's [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md#what-to-expect) page, and the lab that produced it is in this repository (`workbench/lab/measure.mjs`) if you want numbers for your own pages.
 
 ## Languages
 
