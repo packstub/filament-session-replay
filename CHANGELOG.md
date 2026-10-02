@@ -2,9 +2,9 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
-## Unreleased
+## 1.0.0-beta.1 — 2026-10-02
 
-First version.
+First beta. Names and config may still change before 1.0; every change will be listed here with how to upgrade.
 
 ### Added
 
