@@ -47,7 +47,10 @@ jobs:
             echo "Release $TAG already exists; skipping."
             exit 0
           fi
+          # A tag with a suffix (v1.0.0-beta.1) is published as a pre-release.
+          prerelease=""
+          if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
           gh release create "$TAG" \
             --title "$TAG" \
             --notes-file release-notes.md \
-            --verify-tag
+            --verify-tag $prerelease

@@ -14,6 +14,8 @@
 
 Session replay inside your Filament panel. "The form did nothing when I clicked save" becomes a replay you watch next to the user it belongs to, with the failed Livewire request, the JavaScript error and the rage click marked on the timeline. Recordings stay on your own disk and database, and who may watch them is a gate your app defines. Free and open source (MIT), built on [Session Replay for Laravel](https://github.com/packstub/session-replay) and [rrweb](https://github.com/rrweb-io/rrweb).
 
+> **Beta.** 1.0 is close and feedback is very welcome in the [issues](https://github.com/packstub/filament-session-replay/issues). Until 1.0, names and config may still change between betas; the changelog says how to upgrade.
+
 ## Features
 
 - **[Recording without a directive](#recording-a-panel)** — register the plugin and the panel's pages are recorded, with the panel's own guard, the current Filament tenant, the panel id and the impersonator signed into the recording.
@@ -34,9 +36,11 @@ Session replay inside your Filament panel. "The form did nothing when I clicked 
 ## Installation
 
 ```bash
-composer require packstub/filament-session-replay
+composer require "packstub/filament-session-replay:^1.0@beta" "packstub/session-replay:^1.0@beta"
 php artisan session-replay:install
 ```
+
+While both are in beta, require the core with `@beta` too: Composer takes a beta of a dependency only when your app asks for it.
 
 Composer brings `packstub/session-replay` along; the install command publishes its config, runs the migrations and publishes `App\Providers\SessionReplayServiceProvider` with the gate in it. Register the plugin in your panel provider:
 

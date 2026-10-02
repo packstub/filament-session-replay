@@ -12,9 +12,11 @@
 ## Install
 
 ```bash
-composer require packstub/filament-session-replay
+composer require "packstub/filament-session-replay:^1.0@beta" "packstub/session-replay:^1.0@beta"
 php artisan session-replay:install
 ```
+
+While both are in beta, require the core with `@beta` too: Composer takes a beta of a dependency only when your app asks for it.
 
 The install command belongs to the core package. It publishes `config/session-replay.php`, offers to run the migrations and publishes `app/Providers/SessionReplayServiceProvider.php` with the gate in it. The core's [installation guide](https://packstub.dev/docs/session-replay/installation) describes each step.
 
