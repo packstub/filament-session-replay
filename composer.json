@@ -40,15 +40,6 @@
         "pestphp/pest-plugin-livewire": "^4.0|^5.0",
         "orchestra/pest-plugin-testbench": "^4.0|^5.0"
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../session-replay",
-            "options": {
-                "symlink": true
-            }
-        }
-    ],
     "autoload": {
         "psr-4": {
             "Packstub\\SessionReplay\\": "src/"
@@ -80,7 +71,7 @@
             "dev-main": "1.x-dev"
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "beta",
     "prefer-stable": true,
     "homepage": "https://github.com/packstub/filament-session-replay",
     "support": {
