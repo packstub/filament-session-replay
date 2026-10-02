@@ -4,6 +4,7 @@ namespace Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
+use Filament\Facades\Filament;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
@@ -12,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Number;
+use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplayAsset;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -57,6 +59,9 @@ class ViewReplaySession extends ViewRecord
                 ->label(__('Export'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
+                // The export carries the recording's content, so it asks what the core's data routes ask: the gate,
+                // on top of whatever lets this page open (a policy, when the app registered one).
+                ->authorize(fn (ReplaySession $record): bool => ReplaySessionResource::canView($record) && SessionReplay::check($record, Filament::auth()->user()))
                 ->action(fn (ReplaySession $record): StreamedResponse => $this->export($record)),
             DeleteAction::make(),
         ];
@@ -107,6 +112,11 @@ class ViewReplaySession extends ViewRecord
             foreach ($record->chunks as $index => $chunk) {
                 $gzip = $storage->get($chunk->path);
                 $json = $gzip === null ? false : @gzdecode($gzip);
+
+                // A chunk is what a browser uploaded; only a JSON array goes into the file as is.
+                if ($json !== false && (! str_starts_with(ltrim($json), '[') || ! json_validate($json))) {
+                    $json = false;
+                }
 
                 if ($json !== false && preg_match_all('/sr-asset:([a-f0-9]{64})/', $json, $matches)) {
                     $hashes += array_flip($matches[1]);

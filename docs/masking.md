@@ -1,6 +1,6 @@
 # Masking
 
-The core masks every input by default and password inputs always, so what people type never reaches a recording. What a page *displays* (an IBAN in a table, a salary in an infolist, a whole billing section) is yours to decide, and the plugin lets you say it where the field is defined.
+The core masks every input by default and password inputs always, along with text typed into rich editors (RichEditor, MarkdownEditor: anything `contenteditable`) and the value of hidden inputs, so what people type stays out of a recording. TagsInput shows its tags as text, not in an input; mask it with `->maskInReplay()` when the tags are personal. What a page *displays* (an IBAN in a table, a salary in an infolist, a whole billing section) is yours to decide, and the plugin lets you say it where the field is defined.
 
 | Macro | In the recording | Renders |
 | --- | --- | --- |

@@ -123,4 +123,6 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
-Without the gate, a person the policy allows would open the watch page and see "You are not allowed to watch this recording" in the player.
+Without the gate, a person the policy allows would open the watch page and see "You are not allowed to watch this recording" in the player. The export asks both, too.
+
+In a multi-tenant panel, a generated policy checks a permission, not the workspace: the panel finds a recording through its scoped query, but the core's data routes take a recording id from the URL. Check the workspace in the policy's `view` (`$session->tenant_id`), as in [Tenancy](tenancy.md), so the data routes refuse another workspace's recording as well.

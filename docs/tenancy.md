@@ -57,6 +57,27 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
+Workspace admins may open the list here, so give the list the same rule as a query, and turn off the core's built-in pages, which sit outside the panel and know nothing about its current workspace:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+use Packstub\SessionReplay\Facades\SessionReplay;
+
+SessionReplay::visibleUsing(function (Builder $query, $user): void {
+    if (! $user->is_operator) {
+        $query->where('tenant_type', (new Team)->getMorphClass())
+            ->whereIn('tenant_id', $user->administeredTeams()->pluck('id')->map(fn ($id) => (string) $id));
+    }
+});
+```
+
+```php
+// config/session-replay.php
+'viewer' => ['enabled' => false],
+```
+
+Without the two, an admin of one workspace who opens the core's `/session-replay` page sees every workspace's list (a single recording still asks the gate).
+
 `administeredTeams()` and `isAdminOf()` stand for your app's own checks. Take the workspace from the recording, as above, not from `Filament::getTenant()`: the player loads its data from the core's routes, which sit outside the panel, where there is no current tenant.
 
 The usual split is described in [Installation](installation.md#record-in-one-panel-watch-in-another): record the customer panel with `->resource(false)`, watch in the operator panel with `->record(false)`.

@@ -7,6 +7,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -40,8 +41,10 @@ class ReplaysRelationManager extends RelationManager
     {
         $table = ReplaySessionResource::table($table);
 
-        // Every row is the same person here.
+        // Every row is the same person here. The relationship query is not the resource's, so it gets the same
+        // starting point by hand: the current workspace and what SessionReplay::visibleUsing() allows.
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => ReplaySessionResource::scope($query))
             ->columns(array_filter($table->getColumns(), fn (Column $column): bool => $column->getName() !== 'user_id'))
             ->recordActions([
                 Action::make('watch')

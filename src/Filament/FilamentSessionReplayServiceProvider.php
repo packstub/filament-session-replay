@@ -34,7 +34,7 @@ class FilamentSessionReplayServiceProvider extends PackageServiceProvider
     /**
      * Privacy declared where the field is: ->maskInReplay() replaces the text
      * with asterisks in recordings, ->blockInReplay() records an empty box of
-     * the same size. Inputs are masked anyway; this covers what is displayed.
+     * the same size. Inputs and rich editors are masked anyway; this covers what is displayed.
      */
     protected function registerMaskingMacros(): void
     {

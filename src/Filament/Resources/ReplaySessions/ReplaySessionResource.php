@@ -305,7 +305,8 @@ class ReplaySessionResource extends Resource
                 DeleteAction::make(),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([DeleteBulkAction::make()]),
+                // Each selected recording is asked again: being allowed to delete some is not being allowed to delete these.
+                BulkActionGroup::make([DeleteBulkAction::make()->authorizeIndividualRecords(fn (ReplaySession $record): bool => static::canDelete($record))]),
             ])
             ->emptyStateHeading(__('No recordings yet'))
             ->emptyStateDescription(__('Recordings appear here as soon as someone uses a recorded page.'))

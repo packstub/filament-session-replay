@@ -102,6 +102,19 @@ it('lists only the current workspace\'s recordings in a panel with tenancy, unle
     expect(ReplaySessionResource::getEloquentQuery()->count())->toBe(2);
 });
 
+it('asks about every selected recording before a bulk delete', function () {
+    Gate::define('viewSessionReplay', fn ($user, ?ReplaySession $session = null) => $session === null || ! $session->user?->is_staff);
+
+    $customers = $this->recording($this->user());
+    $colleagues = $this->recording($this->user(['is_staff' => true]));
+
+    $this->actingAs($this->user());
+
+    Livewire::test(ListReplaySessions::class)->callTableBulkAction('delete', [$customers, $colleagues]);
+
+    expect(ReplaySession::query()->pluck('id')->all())->toBe([$colleagues->id]);
+});
+
 it('pins, unpins and deletes a recording together with its files', function () {
     Gate::define('viewSessionReplay', fn ($user) => true);
 
@@ -144,6 +157,33 @@ it('exports a recording as one JSON file that carries its stylesheets', function
 
     $response = Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export');
     $response->assertFileDownloaded('session-replay-'.$session->id.'.json');
+});
+
+it('asks the gate before an export, like the core\'s data routes, even when a policy opens the page', function () {
+    Gate::define('viewSessionReplay', fn ($user) => false);
+    Gate::policy(ReplaySession::class, ReplaySessionPolicy::class);
+
+    $session = $this->recording();
+
+    $this->actingAs($this->user(['is_staff' => true]));
+
+    Livewire::test(ViewReplaySession::class, ['record' => $session->id])->assertActionHidden('export');
+});
+
+it('leaves a chunk that is not a JSON array out of an export', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $session = $this->recording($user = $this->user());
+    $chunk = $session->chunks()->sole();
+
+    Storage::disk('replays')->put($chunk->path, gzencode('[]],"session":{"id":"forged"'));
+
+    $this->actingAs($user);
+
+    $response = Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export');
+
+    $response->assertFileDownloaded('session-replay-'.$session->id.'.json');
+    expect(json_decode(base64_decode($response->effects['download']['content']), true)['session']['id'])->toBe($session->id);
 });
 
 it('never offers to create or edit a recording', function () {

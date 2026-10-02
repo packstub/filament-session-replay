@@ -6,6 +6,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
+use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Actions\WatchLastSessionAction;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\RelationManagers\ReplaysRelationManager;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
@@ -29,6 +30,29 @@ it('shows a person\'s recordings on their own page', function () {
         ->assertTableColumnDoesNotExist('user_id')
         ->assertTableColumnExists('started_at')
         ->assertTableActionHasUrl('watch', ReplaySessionResource::getUrl('view', ['record' => $theirs]), $theirs);
+});
+
+it('keeps a person\'s tab and their last session to the current workspace and to what visibleUsing() allows', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $customer = $this->user();
+    $acme = $this->team('Acme');
+    $here = $this->recording($customer, team: $acme);
+    $elsewhere = $this->recording($customer, ['started_at' => now()->addMinute()], team: $this->team('Globex'));
+
+    $this->actingAs($this->user());
+    Filament\Facades\Filament::setTenant($acme, isQuiet: true);
+
+    Livewire::test(ReplaysRelationManager::class, ['ownerRecord' => $customer, 'pageClass' => EditUser::class])
+        ->assertCanSeeTableRecords([$here])
+        ->assertCanNotSeeTableRecords([$elsewhere]);
+
+    expect(WatchLastSessionAction::lastSession($customer)?->is($here))->toBeTrue();
+
+    SessionReplay::visibleUsing(fn ($query) => $query->whereKeyNot($here->id));
+
+    Livewire::test(ReplaysRelationManager::class, ['ownerRecord' => $customer, 'pageClass' => EditUser::class])
+        ->assertCanNotSeeTableRecords([$here, $elsewhere]);
 });
 
 it('hides the relation manager from people who may not watch', function () {
