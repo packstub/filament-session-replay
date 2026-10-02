@@ -26,6 +26,14 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            // URLs none of the default `except` paths match, so only the route names leave these pages out.
+            ->passwordReset()
+            ->passwordResetRoutePrefix('account')
+            ->passwordResetRequestRouteSlug('forgot')
+            ->emailVerification(isRequired: false)
+            ->emailVerificationRoutePrefix('confirm')
+            ->emailChangeVerification()
+            ->emailChangeVerificationRoutePrefix('change')
             ->resources([UserResource::class])
             ->pages([Dashboard::class])
             ->plugin(
