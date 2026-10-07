@@ -21,6 +21,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
@@ -44,6 +45,14 @@ class ReplaySessionResource extends Resource
 
     // Recordings carry their workspace themselves (tenant_type / tenant_id), not through an ownership relationship.
     protected static bool $isScopedToTenant = false;
+
+    // The search box reads the matching people SEARCH_BATCH at a time until SEARCH_LIMIT of them have recordings in the list,
+    // or SEARCH_MAX_BATCHES batches were read.
+    protected const SEARCH_LIMIT = 200;
+
+    protected const SEARCH_BATCH = 500;
+
+    protected const SEARCH_MAX_BATCHES = 20;
 
     public static function getSlug(?Panel $panel = null): string
     {
@@ -105,7 +114,16 @@ class ReplaySessionResource extends Resource
             $query->forTenant($tenant);
         }
 
-        return SessionReplay::visibleTo($query, Filament::auth()->user());
+        $viewer = Filament::auth()->user();
+
+        // Nested, so an orWhere in the app's rule stays inside it instead of undoing the workspace (or the person) above.
+        return $query->where(fn (Builder $query) => SessionReplay::visibleTo($query, $viewer));
+    }
+
+    /** Every workspace's recordings in one list (no current tenant, or scopeToTenant(false)): the rows need their workspace named. */
+    public static function listsEveryWorkspace(): bool
+    {
+        return Filament::getTenant() === null || ! SessionReplayPlugin::get()->isScopedToTenant();
     }
 
     /**
@@ -118,9 +136,11 @@ class ReplaySessionResource extends Resource
     public static function searchPeople(Builder $query, string $search): void
     {
         $columns = SessionReplayPlugin::get()->getSearchPeopleBy();
-        $types = $columns === [] ? [] : ReplaySession::query()->whereNotNull('user_type')->distinct()->pluck('user_type')->all();
+        // The people types of the rows this list can show, not of every workspace's.
+        $scoped = $columns === [] ? null : static::scope(ReplaySession::query());
+        $types = $scoped === null ? [] : (clone $scoped)->whereNotNull('user_type')->distinct()->pluck('user_type')->all();
 
-        $query->where(function (Builder $query) use ($search, $columns, $types): void {
+        $query->where(function (Builder $query) use ($search, $columns, $types, $scoped): void {
             $query->where('user_id', $search);
 
             foreach ($types as $type) {
@@ -137,12 +157,24 @@ class ReplaySessionResource extends Resource
                     continue;
                 }
 
-                $keys = $person->newQuery()
+                // The people who match, a batch at a time, kept when they have recordings in this list: a limit on the
+                // people alone would fill up with other workspaces' namesakes. Bounded, so a one-letter search stays quick.
+                $keys = [];
+                $batches = 0;
+
+                $person->newQuery()
                     ->whereAny($known, 'like', '%'.addcslashes($search, '%_\\').'%')
-                    ->limit(200)
-                    ->pluck($person->getKeyName())
-                    ->map(fn (mixed $key): string => (string) $key)
-                    ->all();
+                    ->select($person->getKeyName())
+                    ->chunkById(static::SEARCH_BATCH, function (Collection $people) use (&$keys, &$batches, $scoped, $type): bool {
+                        $keys = [...$keys, ...(clone $scoped)
+                            ->where('user_type', $type)
+                            ->whereIn('user_id', $people->map(fn (Model $person): string => (string) $person->getKey())->all())
+                            ->distinct()
+                            ->pluck('user_id')
+                            ->all()];
+
+                        return count($keys) < static::SEARCH_LIMIT && ++$batches < static::SEARCH_MAX_BATCHES;
+                    }, $person->getKeyName());
 
                 if ($keys !== []) {
                     $query->orWhere(fn (Builder $query) => $query->where('user_type', $type)->whereIn('user_id', $keys));
@@ -202,6 +234,8 @@ class ReplaySessionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // The Workspace column names every row's tenant: one query per tenant type instead of one per row.
+            ->modifyQueryUsing(fn (Builder $query): Builder => static::listsEveryWorkspace() ? $query->with('tenant') : $query)
             ->defaultSort('started_at', 'desc')
             ->columns([
                 TextColumn::make('user_id')
@@ -214,7 +248,7 @@ class ReplaySessionResource extends Resource
                     ->label(__('Workspace'))
                     ->formatStateUsing(fn (ReplaySession $record): string => (string) SessionReplayPlugin::get()->tenantLabel($record))
                     ->placeholder('·')
-                    ->visible(fn (): bool => Filament::getTenant() === null)
+                    ->visible(fn (): bool => static::listsEveryWorkspace())
                     ->toggleable(),
                 TextColumn::make('started_at')
                     ->label(__('Started'))

@@ -6,8 +6,18 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ### Changed
 
+- **Requires Session Replay 1.0.0-beta.3 or newer** (`packstub/session-replay: ^1.0.0-beta.3`): Export reads the shared page snapshots that version introduced.
+- **Export carries shared snapshots.** A recording made on a page with shared snapshots (`snapshots.share_routes`, `snapshots.share_paths`) keeps only the snapshot's hash in its events (`{"type": 2, "data": {"srSnapshot": "<sha256>"}}`). The file now has a `snapshots` key with the trees the recording points at, and `assets` includes the stylesheets inside those trees, so the export replays on its own as promised. The key is new; nothing else in the file changed.
 - **Docs.** A shorter Features list in the README and on the docs index, one line per area.
+- **Docs.** The installation guide covers turning off the core's built-in viewer for panel-only apps (`viewer.enabled = false`), a panel on its own guard (`viewer.middleware`, `viewer.guard`) and a shared, persistent recording disk before production. Watching says what Pin allows: whoever may watch a recording may keep it past retention.
 - **Tests.** Session Replay 1.0.0-beta.2's `privacy.anonymous` and `except_routes` checked in a real panel: the token keeps the workspace and drops the person and the impersonator, and the default route-name patterns match the password-reset and verification pages Filament registers.
+
+### Fixed
+
+- **Export copies stylesheets only.** Assets are looked up by hash and `kind = stylesheet`, so an `/*sr-asset:<sha256>*/` placeholder in an uploaded chunk can no longer copy a stored shared snapshot of another page into the file.
+- **A workspace stays a workspace with `SessionReplay::visibleUsing()`.** The app's rule is applied as a nested group, so an `orWhere` in it no longer lists other workspaces' recordings in a panel with tenancy, or other people's in a person's Session replays tab.
+- **Search finds this list's people.** The people types are read from the rows the list can show instead of the whole table, and the 200-person limit now counts people with recordings in the current workspace (and what `visibleUsing()` allows), read 500 matching people at a time and at most 10,000, so namesakes in other workspaces no longer crowd them out. Still no join, so the index may stay on its own connection.
+- **Workspace column.** Shown whenever the list holds every workspace, `scopeToTenant(false)` included, not only in a panel without a current tenant; and the workspaces are loaded with the rows (one query per tenant type) instead of one query per row.
 
 ## 1.0.0-beta.1 — 2026-10-02
 

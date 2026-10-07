@@ -1,6 +1,8 @@
 <?php
 
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -9,8 +11,13 @@ use Packstub\SessionReplay\Filament\Actions\WatchLastSessionAction;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ListReplaySessions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ViewReplaySession;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
+use Packstub\SessionReplay\Models\ReplayAsset;
 use Packstub\SessionReplay\Models\ReplaySession;
+use Packstub\SessionReplay\Models\ReplaySessionAsset;
 use Packstub\SessionReplay\SessionReplayPlugin;
+use Packstub\SessionReplay\Support\ReplayStorage;
+use Packstub\SessionReplay\Tests\Fixtures\Models\Team;
+use Packstub\SessionReplay\Tests\Fixtures\Models\User;
 use Packstub\SessionReplay\Tests\Fixtures\ReplaySessionPolicy;
 
 it('follows the viewSessionReplay gate: nobody by default, then whoever it allows', function () {
@@ -186,6 +193,64 @@ it('leaves a chunk that is not a JSON array out of an export', function () {
     expect(json_decode(base64_decode($response->effects['download']['content']), true)['session']['id'])->toBe($session->id);
 });
 
+/** A stylesheet or a shared snapshot on the disk and in the index, as the core's ingest stores them. */
+function storeReplayAsset(string $kind, string $content): string
+{
+    $hash = hash('sha256', $content);
+    $storage = app(ReplayStorage::class);
+    $path = $kind === ReplayAsset::SNAPSHOT ? $storage->snapshotPath($hash) : $storage->assetPath($hash);
+
+    Storage::disk('replays')->put($path, gzencode($content));
+    ReplayAsset::query()->create(['hash' => $hash, 'kind' => $kind, 'path' => $path, 'bytes' => 1, 'raw_bytes' => strlen($content), 'last_seen_at' => now()]);
+
+    return $hash;
+}
+
+it('exports the shared snapshots a recording points at, and the stylesheets inside them, so the file replays on its own', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $css = storeReplayAsset(ReplayAsset::STYLESHEET, 'body { color: rebeccapurple }');
+    $tree = ['type' => 0, 'id' => 1, 'childNodes' => [['type' => 2, 'tagName' => 'style', 'attributes' => ['_cssText' => '/*sr-asset:'.$css.'*/'], 'childNodes' => [], 'id' => 2]]];
+    $page = storeReplayAsset(ReplayAsset::SNAPSHOT, json_encode($tree));
+    $elsewhere = storeReplayAsset(ReplayAsset::SNAPSHOT, '{"type":0,"id":1,"childNodes":[],"another":"page"}');
+
+    $session = $this->recording($user = $this->user());
+    ReplaySessionAsset::query()->insert(['replay_session_id' => $session->id, 'hash' => $page, 'created_at' => now()]);
+
+    Storage::disk('replays')->put($session->chunks()->sole()->path, gzencode(json_encode([
+        ['type' => 4, 'timestamp' => 1, 'data' => ['href' => 'https://app.test/admin']],
+        ['type' => 2, 'timestamp' => 2, 'data' => ['srSnapshot' => $page, 'initialOffset' => ['top' => 0, 'left' => 0]]],
+        // A hash the recording does not point at opens nothing, as in the core's snapshot route.
+        ['type' => 2, 'timestamp' => 3, 'data' => ['srSnapshot' => $elsewhere]],
+    ])));
+
+    $this->actingAs($user);
+
+    $export = json_decode(base64_decode(Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export')->effects['download']['content']), true);
+
+    expect($export['snapshots'])->toBe([$page => $tree])
+        ->and($export['assets'])->toBe([$css => 'body { color: rebeccapurple }'])
+        ->and($export['chunks'][0][1]['data']['srSnapshot'])->toBe($page);
+});
+
+it('puts only stylesheets into an export, whatever an sr-asset placeholder names', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $snapshot = storeReplayAsset(ReplayAsset::SNAPSHOT, '{"type":0,"id":1,"childNodes":[],"another":"workspace"}');
+
+    $session = $this->recording($user = $this->user());
+
+    Storage::disk('replays')->put($session->chunks()->sole()->path, gzencode(json_encode([
+        ['type' => 2, 'timestamp' => 2, 'data' => ['node' => ['type' => 2, 'tagName' => 'style', 'attributes' => ['_cssText' => '/*sr-asset:'.$snapshot.'*/'], 'childNodes' => [], 'id' => 1]]],
+    ])));
+
+    $this->actingAs($user);
+
+    $export = json_decode(base64_decode(Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export')->effects['download']['content']), true);
+
+    expect($export['assets'])->toBe([])->and($export['snapshots'])->toBe([]);
+});
+
 it('never offers to create or edit a recording', function () {
     expect(ReplaySessionResource::canCreate())->toBeFalse()
         ->and(ReplaySessionResource::canEdit(new ReplaySession))->toBeFalse()
@@ -214,6 +279,69 @@ it('finds a person by name or email, in whatever table they live', function () {
         ->searchTable('navy')->assertCanSeeTableRecords([$hers]);
 
     SessionReplayPlugin::get()->searchPeopleBy(['name', 'email']);
+});
+
+it('finds this workspace\'s people however many namesakes other workspaces have', function () {
+    $acme = $this->team('Acme');
+    $globex = $this->team('Globex');
+
+    // More people called Ada than one batch of the search, none with a recording in Acme.
+    User::query()->insert(array_map(fn (int $i): array => ['name' => 'Ada '.$i, 'email' => "ada{$i}@globex.example", 'password' => 'secret'], range(1, 600)));
+    $theirs = $this->recording($this->user(['name' => 'Ada Globex']), team: $globex);
+    $mine = $this->recording($this->user(['name' => 'Ada Acme']), team: $acme);
+
+    Filament::setTenant($acme, isQuiet: true);
+
+    $found = ReplaySessionResource::scope(ReplaySession::query())
+        ->where(fn (Builder $query) => ReplaySessionResource::searchPeople($query, 'Ada'))
+        ->pluck('id')
+        ->all();
+
+    expect($found)->toBe([$mine->id])->and($theirs->exists)->toBeTrue();
+});
+
+it('keeps an orWhere in visibleUsing() inside the workspace', function () {
+    $acme = $this->team('Acme');
+    $viewer = $this->user();
+
+    $mine = $this->recording($viewer, team: $acme);
+    $guestElsewhere = $this->recording(team: $this->team('Globex'), attributes: ['user_type' => null, 'user_id' => null]);
+    $guestHere = $this->recording(team: $acme, attributes: ['user_type' => null, 'user_id' => null]);
+
+    // Staff see their own recordings and guests'.
+    SessionReplay::visibleUsing(fn (Builder $query, $viewer) => $query->where('user_id', (string) $viewer->getKey())->orWhereNull('user_id'));
+
+    $this->actingAs($viewer);
+    Filament::setTenant($acme, isQuiet: true);
+
+    expect(ReplaySessionResource::scope(ReplaySession::query())->pluck('id')->all())->toEqualCanonicalizing([$mine->id, $guestHere->id])
+        ->and($guestElsewhere->exists)->toBeTrue();
+});
+
+it('shows the Workspace column whenever the list holds every workspace, and loads the workspaces in one query', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $user = $this->user();
+
+    foreach (['Acme', 'Globex', 'Initech', 'Umbrella', 'Hooli'] as $name) {
+        $this->recording($user, team: $this->team($name));
+    }
+
+    $this->actingAs($user);
+
+    DB::enableQueryLog();
+
+    Livewire::test(ListReplaySessions::class)->assertTableColumnVisible('tenant_id')->assertSee(['Acme', 'Hooli']);
+
+    expect(collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], '"teams"'))->count())->toBe(1);
+
+    Filament::setTenant($acme = Team::query()->where('name', 'Acme')->sole(), isQuiet: true);
+
+    expect(ReplaySessionResource::listsEveryWorkspace())->toBeFalse();
+
+    SessionReplayPlugin::get()->scopeToTenant(false);
+
+    expect(ReplaySessionResource::listsEveryWorkspace())->toBeTrue();
 });
 
 it('names a workspace the way the app says', function () {
