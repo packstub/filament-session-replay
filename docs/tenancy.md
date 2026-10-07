@@ -14,6 +14,7 @@ A recording belongs to one workspace. When someone switches workspace in the ten
 | --- | --- |
 | A panel with tenancy (a current tenant) | The current workspace's recordings only |
 | A panel without tenancy (an operator console) | Every recording, with a **Workspace** column (the tenant's `name`, or `#id`) |
+| A panel with tenancy and `scopeToTenant(false)` | Every recording, with the **Workspace** column |
 
 ### Naming workspaces
 

@@ -115,6 +115,8 @@ Return null to fall through to the defaults.
 
 The table's search box looks for what you type in the `name` and `email` columns of your people's tables, and matches a person's key exactly. It works per model: recordings of a `User` and of an `Admin` are both found, each in its own table, and a column a table does not have is skipped. There is no join, so it also works when the recordings index lives on another connection than your users.
 
+Only people with recordings in the list count: in a panel with tenancy, the current workspace's (and what `SessionReplay::visibleUsing()` allows). The search reads the matching people 500 at a time and stops at 200 with recordings in the list, or after 10,000, so a one-letter search stays quick; type more of the name when a very common one is not found.
+
 ```php
 SessionReplayPlugin::make()
     ->searchPeopleBy(['first_name', 'last_name', 'email']);

@@ -9,7 +9,7 @@ Newest first (`started_at`, descending).
 | Column | What it shows |
 | --- | --- |
 | **Person** | The person's label (see [People](people.md#naming-people)), "Guest" for a recording without a person, and "Impersonated by #id" underneath when someone was impersonating. Searching the table finds people by name or email, and by their key: type `42` to find user 42 (see [People](people.md#finding-people)). |
-| **Workspace** | The tenant's `name`, what `tenantLabelUsing()` returns, or `#id`. Only visible when the panel has no current tenant, which is the operator's view. Toggleable. |
+| **Workspace** | The tenant's `name`, what `tenantLabelUsing()` returns, or `#id`. Visible when the list holds every workspace: a panel without a current tenant (the operator's view), or one with `scopeToTenant(false)`. Toggleable. |
 | **Started** | Relative time with the full date in the tooltip; a green badge while the recording is still receiving events. Sortable. |
 | **Length** | Wall-clock length, for example `4m 12s`. |
 | **Pages** | Page views, `wire:navigate` swaps included. Sortable. |
@@ -55,8 +55,26 @@ Adding `?t=83` to the URL opens the replay at 1:23, which is handy in a ticket. 
 | Action | What it does |
 | --- | --- |
 | **Pin** / **Unpin** | A pinned recording is never pruned. |
-| **Export** | Downloads `session-replay-{id}.json`: `session` (who, where, when, properties), `markers`, `chunks` (the rrweb events as stored, one array per chunk) and `assets` (the stylesheets the events point at, keyed by their SHA-256). The file holds everything needed to replay the recording elsewhere; stylesheet placeholders in the events look like `/*sr-asset:<sha256>*/`. |
+| **Export** | Downloads `session-replay-{id}.json` with everything needed to replay the recording elsewhere. See [The export file](#the-export-file). |
 | **Delete** | Removes the recording and its files. |
+
+### The export file
+
+| Key | What it holds |
+| --- | --- |
+| `session` | Who, where and when: `id`, `user_type`, `user_id`, `tenant_type`, `tenant_id`, `entry_url`, `started_at`, `last_activity_at`, `properties` |
+| `markers` | `type`, `label`, `payload` and `at_ms` of every marker |
+| `chunks` | The rrweb events as stored, one array per uploaded batch, in upload order |
+| `snapshots` | The shared page snapshots the recording points at, keyed by their SHA-256: each one is a full snapshot's node tree. `{}` when the recording has none |
+| `assets` | The stylesheets the events and the snapshots point at, keyed by their SHA-256 |
+
+To play it with rrweb, put back what the recorder took out, in this order:
+
+1. Concatenate the chunks and sort the events by `timestamp`.
+2. A full snapshot event on a page with [shared snapshots](https://github.com/packstub/session-replay/blob/main/docs/storage.md#shared-snapshots) carries a hash instead of its tree: `{"type": 2, "data": {"srSnapshot": "<sha256>", "initialOffset": {...}}}`. Set `data.node` to `snapshots[<sha256>]` and remove `srSnapshot`.
+3. A stylesheet stored once for every recording is a placeholder, `/*sr-asset:<sha256>*/`, in a `_cssText` attribute or in the text of a `<style>` element. Replace it with `assets[<sha256>]`.
+
+Files exported by 1.0.0-beta.1 of this plugin carry no `snapshots` key; read a missing key as `{}`. Pages such a file recorded with shared snapshots cannot be put back from it, so export them again.
 
 ## Who may do what
 
@@ -66,7 +84,7 @@ The resource asks the same question as the core's viewer and its data routes: th
 | --- | --- |
 | See the resource and the list | `viewSessionReplay` without a recording |
 | Open a watch page | `viewSessionReplay` with the recording |
-| Pin and unpin | Whoever may open that recording |
+| Pin and unpin | Whoever may open that recording (the `view` policy ability when a policy is registered) |
 | Delete, bulk delete | The `deleteSessionReplay` gate when your app defines it (with the recording for one, without for bulk); otherwise whoever may watch |
 | Create, edit | Never |
 
@@ -84,6 +102,8 @@ Gate::define('deleteSessionReplay', fn ($user, ?ReplaySession $session = null): 
 ```
 
 Until `viewSessionReplay` is defined, only the local environment is let in, so the resource is hidden in production until you decide.
+
+Pinning is part of watching: anyone who may open a recording may also pin it, and a pinned recording stays past `retention.days` until someone unpins or deletes it. Give watch access with that in mind, and look at the **Pinned** filter now and then to unpin what is no longer needed.
 
 The gate is asked for the list as a whole. A rule that depends on the recording (like the one above) blocks the watch page and the data, while the row still appears in the list. To narrow the list too, scope the panel to a workspace ([Tenancy](tenancy.md)) or extend the resource and override `getEloquentQuery()`.
 
