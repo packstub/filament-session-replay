@@ -56,6 +56,14 @@ class ReplaySessionResource extends Resource
 
     public static function getSlug(?Panel $panel = null): string
     {
+        // A URL for another panel (a replay link built outside a panel request) takes that panel's slug.
+        if ($panel !== null && $panel->hasPlugin(SessionReplayPlugin::get()->getId())) {
+            /** @var SessionReplayPlugin $plugin */
+            $plugin = $panel->getPlugin(SessionReplayPlugin::get()->getId());
+
+            return $plugin->getSlug();
+        }
+
         return SessionReplayPlugin::get()->getSlug();
     }
 

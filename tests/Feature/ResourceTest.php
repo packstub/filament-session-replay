@@ -2,6 +2,7 @@
 
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -297,7 +298,7 @@ it('finds this workspace\'s people however many namesakes other workspaces have'
         ->pluck('id')
         ->all();
 
-    expect($found)->toBe([$mine->id])->and($theirs->exists)->toBeTrue();
+    expect($found)->toBe([$mine->id])->and(ReplaySession::query()->whereKey($theirs)->exists())->toBeTrue();
 });
 
 it('keeps an orWhere in visibleUsing() inside the workspace', function () {
@@ -315,7 +316,7 @@ it('keeps an orWhere in visibleUsing() inside the workspace', function () {
     Filament::setTenant($acme, isQuiet: true);
 
     expect(ReplaySessionResource::scope(ReplaySession::query())->pluck('id')->all())->toEqualCanonicalizing([$mine->id, $guestHere->id])
-        ->and($guestElsewhere->exists)->toBeTrue();
+        ->and(ReplaySession::query()->whereKey($guestElsewhere)->exists())->toBeTrue();
 });
 
 it('shows the Workspace column whenever the list holds every workspace, and loads the workspaces in one query', function () {
@@ -415,4 +416,28 @@ it('shows the path of the app\'s own pages and the host of any other', function 
         ->and(ReplaySessionResource::shortUrl('https://app.test'))->toBe('/')
         ->and(ReplaySessionResource::shortUrl('http://app.test:8080/admin'))->toBe('/admin')
         ->and(ReplaySessionResource::shortUrl('https://shop.example.com/cart'))->toBe('shop.example.com/cart');
+});
+
+it('links a recording to the panel\'s watch page while the core\'s own pages are off', function () {
+    $recording = $this->recording();
+    $core = route('session-replay.show', ['session' => $recording->id]);
+
+    expect($recording->url())->toBe($core);
+
+    config()->set('session-replay.viewer.enabled', false);
+
+    $panelPage = ReplaySessionResource::getUrl('view', ['record' => $recording]);
+
+    expect($recording->url())->toBe($panelPage)->and($panelPage)->not->toBe($core);
+
+    // The log context of a recorded request gets the same link.
+    Filament::setCurrentPanel(null);
+    $this->withUnencryptedCookie('session_replay_id', $recording->id)->get('/admin/login')->assertOk();
+
+    expect(Context::get('session_replay_url'))->toBe($panelPage);
+
+    // A slug set on the plugin reaches a route name built for the panel from outside it.
+    SessionReplayPlugin::get()->slug('replays');
+
+    expect(ReplaySessionResource::getRouteBaseName(Filament::getPanel('admin')))->toBe('filament.admin.resources.replays');
 });

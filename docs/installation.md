@@ -75,7 +75,7 @@ The core also serves its own pages, `/session-replay` (a list) and `/session-rep
 ],
 ```
 
-The panel keeps working: the player's data routes and the `<x-session-replay::player>` component stay. Turning the pages off also keeps a visitor of `/session-replay` from being sent to a `login` route your app may not have (a Filament panel's login is `filament.admin.auth.login`, not `login`), and in a multi-tenant app it keeps the core's list, which knows nothing about the panel's workspace, out of reach. See [Tenancy](tenancy.md#what-each-panel-lists).
+The panel keeps working: the player's data routes and the `<x-session-replay::player>` component stay, and replay links (`ReplaySession::url()`, `session_replay_url` in the log context) open the panel's watch page instead of the core's. Your own `SessionReplay::urlUsing()` in a provider's `boot()` still takes precedence. Turning the pages off also keeps a visitor of `/session-replay` from being sent to a `login` route your app may not have (a Filament panel's login is `filament.admin.auth.login`, not `login`), and in a multi-tenant app it keeps the core's list, which knows nothing about the panel's workspace, out of reach. See [Tenancy](tenancy.md#what-each-panel-lists).
 
 ### A panel on its own guard
 
