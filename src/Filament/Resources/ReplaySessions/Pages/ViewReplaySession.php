@@ -97,7 +97,10 @@ class ViewReplaySession extends ViewRecord
         ]);
     }
 
-    /** Everything the recording holds as one JSON file: the rrweb events as stored, plus the index. */
+    /**
+     * Everything the recording holds as one JSON file: the rrweb events as stored, the index, the shared
+     * page snapshots the events point at ({type: 2, data: {srSnapshot: <sha256>}}) and the stylesheets.
+     */
     protected function export(ReplaySession $record): StreamedResponse
     {
         $storage = app(ReplayStorage::class);
@@ -110,25 +113,45 @@ class ViewReplaySession extends ViewRecord
             $hashes = [];
 
             foreach ($record->chunks as $index => $chunk) {
-                $gzip = $storage->get($chunk->path);
-                $json = $gzip === null ? false : @gzdecode($gzip);
+                $json = $this->storedJson($storage, $chunk->path, '[');
 
-                // A chunk is what a browser uploaded; only a JSON array goes into the file as is.
-                if ($json !== false && (! str_starts_with(ltrim($json), '[') || ! json_validate($json))) {
-                    $json = false;
-                }
-
-                if ($json !== false && preg_match_all('/sr-asset:([a-f0-9]{64})/', $json, $matches)) {
+                if ($json !== null && preg_match_all('/sr-asset:([a-f0-9]{64})/', $json, $matches)) {
                     $hashes += array_flip($matches[1]);
                 }
 
-                echo ($index ? ',' : '').($json === false ? '[]' : $json);
+                echo ($index ? ',' : '').($json ?? '[]');
             }
 
-            // The stylesheets the events point at (/*sr-asset:<sha256>*/), so the file replays on its own.
-            echo '],"assets":{';
+            // The trees of the shared snapshots this recording points at, which is what the core's snapshot route
+            // serves for it too: a hash in the events alone opens nothing. Their stylesheets are only known from here.
+            echo '],"snapshots":{';
 
-            foreach (ReplayAsset::query()->whereIn('hash', array_keys($hashes))->get() as $index => $asset) {
+            $separator = '';
+            $snapshots = ReplayAsset::query()
+                ->where('kind', ReplayAsset::SNAPSHOT)
+                ->whereIn('hash', $record->snapshotReferences()->pluck('hash')->all())
+                ->get();
+
+            foreach ($snapshots as $snapshot) {
+                $json = $this->storedJson($storage, $snapshot->path, '{');
+
+                if ($json === null) {
+                    continue;
+                }
+
+                if (preg_match_all('/sr-asset:([a-f0-9]{64})/', $json, $matches)) {
+                    $hashes += array_flip($matches[1]);
+                }
+
+                echo $separator.json_encode($snapshot->hash).':'.$json;
+                $separator = ',';
+            }
+
+            // The stylesheets the events and the snapshots point at (/*sr-asset:<sha256>*/), so the file replays on its own.
+            // Stylesheets only: a placeholder naming a snapshot's hash must not copy that snapshot into the file.
+            echo '},"assets":{';
+
+            foreach (ReplayAsset::query()->where('kind', ReplayAsset::STYLESHEET)->whereIn('hash', array_keys($hashes))->get() as $index => $asset) {
                 $css = @gzdecode((string) $storage->get($asset->path));
 
                 echo ($index ? ',' : '').json_encode($asset->hash).':'.json_encode($css === false ? '' : $css);
@@ -136,5 +159,14 @@ class ViewReplaySession extends ViewRecord
 
             echo '}}';
         }, 'session-replay-'.$record->id.'.json', ['Content-Type' => 'application/json']);
+    }
+
+    /** A stored file as JSON text, or null: it is what a browser uploaded, so only valid JSON of the expected shape goes into the file as is. */
+    protected function storedJson(ReplayStorage $storage, string $path, string $opens): ?string
+    {
+        $gzip = $storage->get($path);
+        $json = $gzip === null ? false : @gzdecode($gzip);
+
+        return $json !== false && str_starts_with(ltrim($json), $opens) && json_validate($json) ? $json : null;
     }
 }

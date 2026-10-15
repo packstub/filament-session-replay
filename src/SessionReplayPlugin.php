@@ -203,6 +203,11 @@ class SessionReplayPlugin implements Plugin
     {
         if ($this->evaluate($this->resource)) {
             $panel->resources([ReplaySessionResource::class]);
+
+            // Where a recording is watched (ReplaySession::url(), the log context's link): this panel's page while
+            // the core's own pages are off, or they would be empty. An app's SessionReplay::urlUsing() in a
+            // provider's boot() runs later and wins.
+            app(SessionReplayManager::class)->urlUsing(fn (ReplaySession $session): ?string => $this->watchUrl($panel, $session));
         }
 
         if ($this->widget) {
@@ -215,6 +220,25 @@ class SessionReplayPlugin implements Plugin
     public function boot(Panel $panel): void
     {
         //
+    }
+
+    /**
+     * The core's page while viewer.enabled is on, as without the plugin; otherwise this panel's, when the panel can
+     * show the recording (a panel with tenancy needs the recording's workspace in the URL).
+     */
+    protected function watchUrl(Panel $panel, ReplaySession $session): ?string
+    {
+        if (config('session-replay.viewer.enabled', true)) {
+            return app(SessionReplayManager::class)->route('show', ['session' => $session->getKey()]);
+        }
+
+        $tenant = $panel->hasTenancy() ? $session->tenant : null;
+
+        if ($panel->hasTenancy() && ! $tenant instanceof Model) {
+            return null;
+        }
+
+        return ReplaySessionResource::getUrl('view', ['record' => $session], panel: $panel->getId(), tenant: $tenant);
     }
 
     /** The recorder's script tags for the current panel, or nothing. */

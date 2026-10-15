@@ -7,7 +7,7 @@
 | PHP | 8.3 or newer |
 | Laravel | 12.x or 13.x |
 | Filament | 5.x |
-| packstub/session-replay | ^1.0, installed by Composer |
+| packstub/session-replay | ^1.0 (1.0.0-beta.3 or newer during the beta), installed by Composer |
 
 ## Install
 
@@ -64,6 +64,34 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 
 The gate is called without a recording for the list and with it for a single replay and every file behind it. The core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-gate) explains it with examples; [Watching](watching.md#who-may-do-what) covers policies and Filament Shield.
 
+### Watching only in the panel
+
+The core also serves its own pages, `/session-replay` (a list) and `/session-replay/{id}` (a player), behind `['web', 'auth']` and the same gate. When your team watches recordings only in the panel, turn them off:
+
+```php
+// config/session-replay.php
+'viewer' => [
+    'enabled' => false,
+],
+```
+
+The panel keeps working: the player's data routes and the `<x-session-replay::player>` component stay, and replay links (`ReplaySession::url()`, `session_replay_url` in the log context) open the panel's watch page instead of the core's. Your own `SessionReplay::urlUsing()` in a provider's `boot()` still takes precedence. Turning the pages off also keeps a visitor of `/session-replay` from being sent to a `login` route your app may not have (a Filament panel's login is `filament.admin.auth.login`, not `login`), and in a multi-tenant app it keeps the core's list, which knows nothing about the panel's workspace, out of reach. See [Tenancy](tenancy.md#what-each-panel-lists).
+
+### A panel on its own guard
+
+The player loads the recording from the core's data routes, which sit outside the panel and run `viewer.middleware` (`['web', 'auth']`) and then the gate with the user of `viewer.guard` (`null`: the default guard). When the panel signs people in with a guard of its own, say `->authGuard('admin')`, set both, or the player is refused while the page itself opens:
+
+```php
+// config/session-replay.php
+'viewer' => [
+    'enabled' => false,
+    'middleware' => ['web', 'auth:admin'],
+    'guard' => 'admin',
+],
+```
+
+The keys are described in the core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-built-in-viewer). Recording needs nothing: the plugin signs the panel's own user into the recording.
+
 ## Schedule the clean-up
 
 ```php
@@ -73,6 +101,16 @@ Schedule::command('session-replay:prune')->daily();
 ```
 
 Recordings older than `retention.days` (30 by default) are deleted with their files; pinned recordings stay. See [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md#pruning).
+
+## Before production
+
+The recordings are files on the disk named by `storage.disk` (`SESSION_REPLAY_DISK`, `local` by default) with an index in the database. The `local` disk is fine on one server with a persistent filesystem. When the app runs on several servers, or where the local filesystem does not last (Laravel Cloud, Vapor, containers that are replaced on deploy), an upload lands on one machine and the player asks another, and recordings vanish on the next deploy. Point the core at a shared, persistent disk such as S3 or R2:
+
+```dotenv
+SESSION_REPLAY_DISK=replays
+```
+
+The core's [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md#the-disk) page has the disk configuration; keep it private, every file is read through the gated routes.
 
 ## Plugin options
 
