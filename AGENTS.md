@@ -21,6 +21,7 @@ The core comes from Packagist. `minimum-stability` is `beta` while the core is i
 - `src/Filament/FilamentSessionReplayServiceProvider` — views and the `maskInReplay()` / `blockInReplay()` macros on `Field`, `Column`, `Entry` and layout `Component`s.
 - `tests/Fixtures` — the admin panel, a `UserResource` using the relation manager, the action and the macros, a policy; `workbench/` — the app behind `composer serve`.
 - `workbench/lab/measure.mjs` — the measuring lab (Playwright against `composer serve`, the workbench's Orders resource): stored bytes and events per scenario, interaction latency with and without the recorder. The numbers in `docs/installation.md` and the core's `docs/storage.md` come from it; re-run it after a recorder change.
+- `workbench/lab/navigate.mjs` — the browser check for `wire:navigate`: each scenario starts the workbench with `LAB_SPA=1` and its knobs (`LAB_EXCEPT_ROUTES`, `LAB_IMPERSONATE_ON`, `SESSION_REPLAY_MODE`) and checks what was stored: excluded pages stay out, console messages during a swap are kept, an identity change starts a new recording. Exits 1 on a failed check. `RECORDER=path` serves a core build that is not released yet. Run it after a change in the core's `resources/js`.
 - `docs/` — customer docs; synced into the store under `filament-session-replay/1.x` once public.
 
 ## Conventions

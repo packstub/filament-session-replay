@@ -34,7 +34,8 @@ class AdminPanelProvider extends PanelProvider
             // LAB_SPA=1 composer serve: the panel navigates with wire:navigate, for the lab's measurements.
             ->spa((bool) env('LAB_SPA', false))
             ->pages([Dashboard::class])
-            ->plugin(SessionReplayPlugin::make()->widget()->navigationGroup('Support'))
+            // LAB_IMPERSONATE_ON=admin/orders: pages on that path are signed with an impersonator, for the lab's identity check.
+            ->plugin(SessionReplayPlugin::make()->widget()->navigationGroup('Support')->impersonatorUsing(fn () => env('LAB_IMPERSONATE_ON') && request()->is(env('LAB_IMPERSONATE_ON')) ? '7' : null))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
