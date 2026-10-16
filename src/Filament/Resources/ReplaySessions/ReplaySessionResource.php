@@ -46,9 +46,14 @@ class ReplaySessionResource extends Resource
     // Recordings carry their workspace themselves (tenant_type / tenant_id), not through an ownership relationship.
     protected static bool $isScopedToTenant = false;
 
-    // The search box reads the matching people SEARCH_BATCH at a time until SEARCH_LIMIT of them have recordings in the list,
-    // or SEARCH_MAX_BATCHES batches were read.
+    // The search box looks for the search among the people of this list first (SEARCH_PEOPLE of them at most, read
+    // SEARCH_KEYS at a time). A list with more people than that reads the matching people SEARCH_BATCH at a time
+    // instead, until SEARCH_LIMIT of them have recordings in the list or SEARCH_MAX_BATCHES batches were read.
     protected const SEARCH_LIMIT = 200;
+
+    protected const SEARCH_PEOPLE = 5000;
+
+    protected const SEARCH_KEYS = 500;
 
     protected const SEARCH_BATCH = 500;
 
@@ -165,8 +170,19 @@ class ReplaySessionResource extends Resource
                     continue;
                 }
 
-                // The people who match, a batch at a time, kept when they have recordings in this list: a limit on the
-                // people alone would fill up with other workspaces' namesakes. Bounded, so a one-letter search stays quick.
+                $keys = static::searchAmongListedPeople($person, $known, $search, $scoped, $type);
+
+                if ($keys !== null) {
+                    if ($keys !== []) {
+                        $query->orWhere(fn (Builder $query) => $query->where('user_type', $type)->whereIn('user_id', $keys));
+                    }
+
+                    continue;
+                }
+
+                // More people in the list than SEARCH_PEOPLE: the people who match, a batch at a time, kept when they
+                // have recordings in this list (a limit on the people alone would fill up with other workspaces'
+                // namesakes). Bounded, so a one-letter search stays quick.
                 $keys = [];
                 $batches = 0;
 
@@ -189,6 +205,51 @@ class ReplaySessionResource extends Resource
                 }
             }
         });
+    }
+
+    /**
+     * The keys of the people with recordings in this list whose columns match
+     * the search: the list's people are usually far fewer than the people
+     * table, so one query over the list and one over the people (a few, for
+     * a long list) find them. Null when the list has more than SEARCH_PEOPLE
+     * people of this type, which is the caller's cue to search the people
+     * table instead.
+     *
+     * @param  array<int, string>  $columns
+     * @param  Builder<ReplaySession>  $scoped
+     * @return array<int, string>|null
+     */
+    protected static function searchAmongListedPeople(Model $person, array $columns, string $search, Builder $scoped, string $type): ?array
+    {
+        $listed = (clone $scoped)
+            ->where('user_type', $type)
+            ->whereNotNull('user_id')
+            ->distinct()
+            ->limit(static::SEARCH_PEOPLE + 1)
+            ->pluck('user_id')
+            ->all();
+
+        if (count($listed) > static::SEARCH_PEOPLE) {
+            return null;
+        }
+
+        $keys = [];
+
+        foreach (array_chunk($listed, static::SEARCH_KEYS) as $chunk) {
+            $keys = [...$keys, ...$person->newQuery()
+                ->whereKey($chunk)
+                ->whereAny($columns, 'like', '%'.addcslashes($search, '%_\\').'%')
+                ->limit(static::SEARCH_LIMIT - count($keys))
+                ->pluck($person->getKeyName())
+                ->map(fn ($key): string => (string) $key)
+                ->all()];
+
+            if (count($keys) >= static::SEARCH_LIMIT) {
+                break;
+            }
+        }
+
+        return $keys;
     }
 
     protected static function hasPolicy(): bool

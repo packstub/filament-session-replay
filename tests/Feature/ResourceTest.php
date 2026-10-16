@@ -301,6 +301,31 @@ it('finds this workspace\'s people however many namesakes other workspaces have'
     expect($found)->toBe([$mine->id])->and(ReplaySession::query()->whereKey($theirs)->exists())->toBeTrue();
 });
 
+it('searches the list\'s own people in one query each, however large the people table is', function () {
+    $acme = $this->team('Acme');
+
+    // Far more namesakes than a batch of the people table, none with a recording in Acme.
+    User::query()->insert(array_map(fn (int $i): array => ['name' => 'Ada '.$i, 'email' => "ada{$i}@globex.example", 'password' => 'secret'], range(1, 1200)));
+    $mine = $this->recording($this->user(['name' => 'Ada Acme']), team: $acme);
+    $this->recording($this->user(['name' => 'Bob Acme']), team: $acme);
+
+    Filament::setTenant($acme, isQuiet: true);
+
+    $peopleQueries = 0;
+    DB::listen(function ($query) use (&$peopleQueries): void {
+        if (str_contains($query->sql, 'like')) {
+            $peopleQueries++;
+        }
+    });
+
+    $found = ReplaySessionResource::scope(ReplaySession::query())
+        ->where(fn (Builder $query) => ReplaySessionResource::searchPeople($query, 'Ada'))
+        ->pluck('id')
+        ->all();
+
+    expect($found)->toBe([$mine->id])->and($peopleQueries)->toBe(1);
+});
+
 it('keeps an orWhere in visibleUsing() inside the workspace', function () {
     $acme = $this->team('Acme');
     $viewer = $this->user();
