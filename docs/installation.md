@@ -7,16 +7,14 @@
 | PHP | 8.3 or newer |
 | Laravel | 12.x or 13.x |
 | Filament | 5.x |
-| packstub/session-replay | ^1.0 (1.0.0-beta.3 or newer during the beta), installed by Composer |
+| packstub/session-replay | ^1.0, installed by Composer |
 
 ## Install
 
 ```bash
-composer require "packstub/filament-session-replay:^1.0@beta" "packstub/session-replay:^1.0@beta"
+composer require packstub/filament-session-replay
 php artisan session-replay:install
 ```
-
-While both are in beta, require the core with `@beta` too: Composer takes a beta of a dependency only when your app asks for it.
 
 The install command belongs to the core package. It publishes `config/session-replay.php`, offers to run the migrations and publishes `app/Providers/SessionReplayServiceProvider.php` with the gate in it. The core's [installation guide](https://github.com/packstub/session-replay/blob/main/docs/installation.md) describes each step.
 
