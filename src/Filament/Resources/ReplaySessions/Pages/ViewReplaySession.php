@@ -4,7 +4,6 @@ namespace Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages;
 
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
-use Filament\Facades\Filament;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
@@ -13,7 +12,6 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Number;
-use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplayAsset;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -59,9 +57,8 @@ class ViewReplaySession extends ViewRecord
                 ->label(__('Export'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
-                // The export carries the recording's content, so it asks what the core's data routes ask: the gate,
-                // on top of whatever lets this page open (a policy, when the app registered one).
-                ->authorize(fn (ReplaySession $record): bool => ReplaySessionResource::canView($record) && SessionReplay::check($record, Filament::auth()->user()))
+                // The export carries the recording's content: whoever may watch it may take it along.
+                ->authorize(fn (ReplaySession $record): bool => ReplaySessionResource::canView($record))
                 ->action(fn (ReplaySession $record): StreamedResponse => $this->export($record)),
             DeleteAction::make(),
         ];
@@ -87,7 +84,9 @@ class ViewReplaySession extends ViewRecord
                     TextEntry::make('device')->label(__('Device'))
                         ->state(fn (ReplaySession $record): string => trim(__(ucfirst((string) $record->device)).' '.($record->viewport_width ? $record->viewport_width.'×'.$record->viewport_height : '')) ?: '·'),
                     TextEntry::make('bytes')->label(__('Size'))->formatStateUsing(fn (int $state): string => Number::fileSize($state)),
-                    TextEntry::make('impersonator_id')->label(__('Impersonated by'))->prefix('#')->visible(fn (ReplaySession $record): bool => $record->impersonator_id !== null),
+                    TextEntry::make('impersonator')->label(__('Impersonated by'))
+                        ->state(fn (ReplaySession $record): ?string => SessionReplayPlugin::get()->impersonatorLabel($record))
+                        ->visible(fn (ReplaySession $record): bool => $record->impersonator_id !== null),
                     TextEntry::make('entry_url')->label(__('First page'))->columnSpanFull()->copyable(),
                     TextEntry::make('truncated')->hiddenLabel()->columnSpanFull()->color('warning')
                         ->state(__('This recording reached its size limit and stops before the visit ended.'))
@@ -148,10 +147,19 @@ class ViewReplaySession extends ViewRecord
             }
 
             // The stylesheets the events and the snapshots point at (/*sr-asset:<sha256>*/), so the file replays on its own.
-            // Stylesheets only: a placeholder naming a snapshot's hash must not copy that snapshot into the file.
+            // Stylesheets only: a placeholder naming a snapshot's hash must not copy that snapshot into the file. And only
+            // the ones the recording points at, as the core's data route serves them (a stylesheet may carry a workspace's
+            // own theme); a recording from before stylesheets were referenced points at none and keeps every hash it names.
             echo '},"assets":{';
 
-            foreach (ReplayAsset::query()->where('kind', ReplayAsset::STYLESHEET)->whereIn('hash', array_keys($hashes))->get() as $index => $asset) {
+            $stylesheets = ReplayAsset::query()->where('kind', ReplayAsset::STYLESHEET)->whereIn('hash', array_keys($hashes));
+            $referenced = $record->snapshotReferences()->whereIn('hash', ReplayAsset::query()->select('hash')->where('kind', ReplayAsset::STYLESHEET))->pluck('hash')->all();
+
+            if ($referenced !== []) {
+                $stylesheets->whereIn('hash', $referenced);
+            }
+
+            foreach ($stylesheets->get() as $index => $asset) {
                 $css = @gzdecode((string) $storage->get($asset->path));
 
                 echo ($index ? ',' : '').json_encode($asset->hash).':'.json_encode($css === false ? '' : $css);

@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ListReplaySessions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ViewReplaySession;
+use Packstub\SessionReplay\Models\ReplayMarker;
 use Packstub\SessionReplay\Models\ReplaySession;
 use Packstub\SessionReplay\SessionReplayPlugin;
 use UnitEnum;
@@ -46,9 +47,14 @@ class ReplaySessionResource extends Resource
     // Recordings carry their workspace themselves (tenant_type / tenant_id), not through an ownership relationship.
     protected static bool $isScopedToTenant = false;
 
-    // The search box reads the matching people SEARCH_BATCH at a time until SEARCH_LIMIT of them have recordings in the list,
-    // or SEARCH_MAX_BATCHES batches were read.
+    // The search box looks for the search among the people of this list first (SEARCH_PEOPLE of them at most, read
+    // SEARCH_KEYS at a time). A list with more people than that reads the matching people SEARCH_BATCH at a time
+    // instead, until SEARCH_LIMIT of them have recordings in the list or SEARCH_MAX_BATCHES batches were read.
     protected const SEARCH_LIMIT = 200;
+
+    protected const SEARCH_PEOPLE = 5000;
+
+    protected const SEARCH_KEYS = 500;
 
     protected const SEARCH_BATCH = 500;
 
@@ -104,7 +110,7 @@ class ReplaySessionResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return static::scope(parent::getEloquentQuery()->with('user'));
+        return static::scope(parent::getEloquentQuery()->with(['user', 'impersonator']));
     }
 
     /**
@@ -128,7 +134,11 @@ class ReplaySessionResource extends Resource
         return $query->where(fn (Builder $query) => SessionReplay::visibleTo($query, $viewer));
     }
 
-    /** Every workspace's recordings in one list (no current tenant, or scopeToTenant(false)): the rows need their workspace named. */
+    /**
+     * Every workspace's recordings in one list (no current tenant, or scopeToTenant(false)): the rows need their workspace named.
+     *
+     * @internal
+     */
     public static function listsEveryWorkspace(): bool
     {
         return Filament::getTenant() === null || ! SessionReplayPlugin::get()->isScopedToTenant();
@@ -138,6 +148,8 @@ class ReplaySessionResource extends Resource
      * The person's key, or what the search box holds found in the recorded
      * people's own tables. No join: the index may live on another connection
      * than the people, and a recording names its person by morph type and key.
+     *
+     * @internal The Person column's search.
      *
      * @param  Builder<ReplaySession>  $query
      */
@@ -165,8 +177,19 @@ class ReplaySessionResource extends Resource
                     continue;
                 }
 
-                // The people who match, a batch at a time, kept when they have recordings in this list: a limit on the
-                // people alone would fill up with other workspaces' namesakes. Bounded, so a one-letter search stays quick.
+                $keys = static::searchAmongListedPeople($person, $known, $search, $scoped, $type);
+
+                if ($keys !== null) {
+                    if ($keys !== []) {
+                        $query->orWhere(fn (Builder $query) => $query->where('user_type', $type)->whereIn('user_id', $keys));
+                    }
+
+                    continue;
+                }
+
+                // More people in the list than SEARCH_PEOPLE: the people who match, a batch at a time, kept when they
+                // have recordings in this list (a limit on the people alone would fill up with other workspaces'
+                // namesakes). Bounded, so a one-letter search stays quick.
                 $keys = [];
                 $batches = 0;
 
@@ -191,19 +214,68 @@ class ReplaySessionResource extends Resource
         });
     }
 
+    /**
+     * The keys of the people with recordings in this list whose columns match
+     * the search: the list's people are usually far fewer than the people
+     * table, so one query over the list and one over the people (a few, for
+     * a long list) find them. Null when the list has more than SEARCH_PEOPLE
+     * people of this type, which is the caller's cue to search the people
+     * table instead.
+     *
+     * @param  array<int, string>  $columns
+     * @param  Builder<ReplaySession>  $scoped
+     * @return array<int, string>|null
+     */
+    protected static function searchAmongListedPeople(Model $person, array $columns, string $search, Builder $scoped, string $type): ?array
+    {
+        $listed = (clone $scoped)
+            ->where('user_type', $type)
+            ->whereNotNull('user_id')
+            ->distinct()
+            ->limit(static::SEARCH_PEOPLE + 1)
+            ->pluck('user_id')
+            ->all();
+
+        if (count($listed) > static::SEARCH_PEOPLE) {
+            return null;
+        }
+
+        $keys = [];
+
+        foreach (array_chunk($listed, static::SEARCH_KEYS) as $chunk) {
+            $keys = [...$keys, ...$person->newQuery()
+                ->whereKey($chunk)
+                ->whereAny($columns, 'like', '%'.addcslashes($search, '%_\\').'%')
+                ->limit(static::SEARCH_LIMIT - count($keys))
+                ->pluck($person->getKeyName())
+                ->map(fn ($key): string => (string) $key)
+                ->all()];
+
+            if (count($keys) >= static::SEARCH_LIMIT) {
+                break;
+            }
+        }
+
+        return $keys;
+    }
+
     protected static function hasPolicy(): bool
     {
         return Gate::getPolicyFor(ReplaySession::class) !== null;
     }
 
+    /**
+     * What the core's data routes ask, so the list, the watch page and the player agree: the viewSessionReplay gate
+     * when the app defined it, else the ReplaySession policy (viewAny, view), else the local environment only.
+     */
     public static function canViewAny(): bool
     {
-        return static::hasPolicy() ? parent::canViewAny() : SessionReplay::check(user: Filament::auth()->user());
+        return SessionReplay::check(user: Filament::auth()->user());
     }
 
     public static function canView(Model $record): bool
     {
-        return static::hasPolicy() ? parent::canView($record) : SessionReplay::check($record, Filament::auth()->user());
+        return $record instanceof ReplaySession && SessionReplay::check($record, Filament::auth()->user());
     }
 
     public static function canCreate(): bool
@@ -242,15 +314,18 @@ class ReplaySessionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            // The Workspace column names every row's tenant: one query per tenant type instead of one per row.
-            ->modifyQueryUsing(fn (Builder $query): Builder => static::listsEveryWorkspace() ? $query->with('tenant') : $query)
+            // The Workspace column names every row's tenant: one query per tenant type instead of one per row;
+            // the Reported badge is one exists per row, not a query.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query
+                ->withExists(['markers as reported' => fn (Builder $markers) => $markers->where('type', ReplayMarker::REPORT)])
+                ->when(static::listsEveryWorkspace(), fn (Builder $query) => $query->with('tenant')))
             ->defaultSort('started_at', 'desc')
             ->columns([
                 TextColumn::make('user_id')
                     ->label(__('Person'))
                     ->formatStateUsing(fn (ReplaySession $record): string => SessionReplayPlugin::get()->userLabel($record))
                     ->default('guest')
-                    ->description(fn (ReplaySession $record): ?string => $record->impersonator_id ? __('Impersonated by #:id', ['id' => $record->impersonator_id]) : null)
+                    ->description(fn (ReplaySession $record): ?string => ($who = SessionReplayPlugin::get()->impersonatorLabel($record)) === null ? null : __('Impersonated by :who', ['who' => $who]))
                     ->searchable(query: fn (Builder $query, string $search) => static::searchPeople($query, $search)),
                 TextColumn::make('tenant_id')
                     ->label(__('Workspace'))
@@ -274,6 +349,13 @@ class ReplaySessionResource extends Resource
                     ->badge()
                     ->color(fn (int $state): string => $state > 0 ? 'danger' : 'gray')
                     ->sortable(),
+                TextColumn::make('reported')
+                    ->label(__('Reported'))
+                    ->badge()
+                    ->color('warning')
+                    ->state(fn (ReplaySession $record): ?string => $record->getAttribute('reported') ? __('Reported') : null)
+                    ->placeholder('·')
+                    ->toggleable(),
                 TextColumn::make('rage_click_count')
                     ->label(__('Rage clicks'))
                     ->badge()
@@ -327,6 +409,7 @@ class ReplaySessionResource extends Resource
                         false: fn (Builder $query) => $query->where('error_count', 0),
                     ),
                 Filter::make('poor_vitals')->label(__('Slow pages (poor vitals)'))->toggle()->query(fn (Builder $query) => $query->poorVitals()),
+                Filter::make('reported')->label(__('Reported a problem'))->toggle()->query(fn (Builder $query) => $query->reported()),
                 Filter::make('rage_clicks')->label(__('Rage clicks'))->toggle()->query(fn (Builder $query) => $query->where('rage_click_count', '>', 0)),
                 Filter::make('impersonated')->label(__('Impersonated'))->toggle()->query(fn (Builder $query) => $query->whereNotNull('impersonator_id')),
                 Filter::make('pinned')->label(__('Pinned'))->toggle()->query(fn (Builder $query) => $query->where('pinned', true)),
@@ -355,7 +438,11 @@ class ReplaySessionResource extends Resource
             ->emptyStateIcon(Heroicon::OutlinedPlayCircle);
     }
 
-    /** The path alone for a page of this app (the host says nothing there), host and path for any other. */
+    /**
+     * The path alone for a page of this app (the host says nothing there), host and path for any other.
+     *
+     * @internal
+     */
     public static function shortUrl(string $url): string
     {
         $host = parse_url($url, PHP_URL_HOST);
@@ -370,7 +457,11 @@ class ReplaySessionResource extends Resource
         return Str::after($url, '://');
     }
 
-    /** A pinned recording is never pruned. */
+    /**
+     * A pinned recording is never pruned.
+     *
+     * @internal The row and watch-page action.
+     */
     public static function pinAction(): Action
     {
         return Action::make('pin')

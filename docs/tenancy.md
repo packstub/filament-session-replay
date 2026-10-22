@@ -106,18 +106,18 @@ The Workspace column and the `tenant` relation resolve the tenant model through 
 
 ## Impersonation
 
-A recording made while someone is impersonating a customer is flagged with the impersonator's key: "Impersonated by #7" under the person in the list, an **Impersonated by** fact on the watch page, and the **Impersonated** filter to find or exclude them.
+A recording made while someone is impersonating a customer names the impersonator: "Impersonated by grace@example.com" under the person in the list (the core's `viewer.user_label`, then name, then email; `#7` when only a key is known), an **Impersonated by** fact on the watch page, and the **Impersonated** filter to find or exclude them.
 
-With [Packstub's Account Switcher](https://packstub.dev/docs/filament-account-switcher) installed this is automatic: the plugin asks `Packstub\AccountSwitcher\AccountSwitcher` whether someone is impersonating and takes that person's key.
+With [Packstub's Account Switcher](https://packstub.dev/docs/filament-account-switcher) installed this is automatic: the plugin asks `Packstub\AccountSwitcher\AccountSwitcher` whether someone is impersonating and takes that person.
 
 With another impersonation package, tell the plugin where to look:
 
 ```php
 SessionReplayPlugin::make()
-    ->impersonatorUsing(fn (): int|string|null => session('impersonated_by'));
+    ->impersonatorUsing(fn (): ?User => User::find(session('impersonated_by')));
 ```
 
-Return null when nobody is impersonating.
+Return the impersonator's model to have them named, their key (`int|string`) to have them shown as `#key`, and null when nobody is impersonating.
 
 To leave support sessions out of recordings altogether, use `record()`:
 

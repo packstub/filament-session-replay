@@ -83,9 +83,12 @@ abstract class TestCase extends Orchestra
         $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
     }
 
+    /** A counter, not uniqid(): its hex prefix spelt "6ada" for a while in 2026 and matched a search for "Ada". */
+    protected static int $people = 0;
+
     protected function user(array $attributes = []): User
     {
-        return User::query()->create($attributes + ['name' => 'Ada Lovelace', 'email' => uniqid().'@example.com', 'password' => 'secret']);
+        return User::query()->create($attributes + ['name' => 'Ada Lovelace', 'email' => 'person'.(++static::$people).'@example.com', 'password' => 'secret']);
     }
 
     protected function team(string $name = 'Acme'): Team
@@ -99,7 +102,7 @@ abstract class TestCase extends Orchestra
      * @param  array<string, mixed>  $attributes
      * @param  array<int, array<string, mixed>>  $markers
      */
-    protected function recording(?User $user = null, array $attributes = [], ?Team $team = null, array $markers = [], ?string $impersonator = null): ReplaySession
+    protected function recording(?User $user = null, array $attributes = [], ?Team $team = null, array $markers = [], User|string|null $impersonator = null): ReplaySession
     {
         $id = (string) Str::uuid();
         $now = now()->getTimestampMs();
