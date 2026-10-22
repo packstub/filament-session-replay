@@ -2,7 +2,7 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
-## Unreleased
+## 1.0.0 — 2026-10-22
 
 ### Added
 
