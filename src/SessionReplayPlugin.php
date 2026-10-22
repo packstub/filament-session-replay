@@ -118,7 +118,10 @@ class SessionReplayPlugin implements Plugin
         return $this;
     }
 
-    /** Who is impersonating, when it is not Packstub's Account Switcher: fn (): int|string|null. */
+    /**
+     * Who is impersonating, when it is not Packstub's Account Switcher: fn (): Model|int|string|null. A model is
+     * named like a person (viewer.user_label, name, email) in the list and on the watch page; a key is shown as #key.
+     */
     public function impersonatorUsing(Closure $callback): static
     {
         $this->impersonatorUsing = $callback;
@@ -241,7 +244,11 @@ class SessionReplayPlugin implements Plugin
         return ReplaySessionResource::getUrl('view', ['record' => $session], panel: $panel->getId(), tenant: $tenant);
     }
 
-    /** The recorder's script tags for the current panel, or nothing. */
+    /**
+     * The recorder's script tags for the current panel, or nothing.
+     *
+     * @internal Rendered by the panel's render hook.
+     */
     public function recorder(): HtmlString
     {
         $panel = Filament::getCurrentPanel();
@@ -271,7 +278,7 @@ class SessionReplayPlugin implements Plugin
         ]);
     }
 
-    protected function impersonator(): int|string|null
+    protected function impersonator(): Model|int|string|null
     {
         if ($this->impersonatorUsing) {
             return ($this->impersonatorUsing)();
@@ -281,7 +288,7 @@ class SessionReplayPlugin implements Plugin
         $switcher = 'Packstub\\AccountSwitcher\\AccountSwitcher';
 
         if (class_exists($switcher) && app()->bound($switcher) && app($switcher)->isImpersonating()) {
-            return app($switcher)->impersonator()?->getAuthIdentifier();
+            return app($switcher)->impersonator();
         }
 
         return null;
@@ -301,11 +308,25 @@ class SessionReplayPlugin implements Plugin
             return __('Guest');
         }
 
-        $user = $session->user;
+        return $this->personLabel($session->user, $session->user_id);
+    }
 
-        if ($user instanceof Model) {
+    /** Who impersonated the person, named like a person when the recording keeps a model, else #key; null when nobody did. */
+    public function impersonatorLabel(ReplaySession $session): ?string
+    {
+        if ($session->impersonator_id === null) {
+            return null;
+        }
+
+        return $this->personLabel($session->impersonator_type === null ? null : $session->impersonator, $session->impersonator_id);
+    }
+
+    /** viewer.user_label, name or email of the model, whichever is set first; #key without a model or when all are empty. */
+    protected function personLabel(mixed $person, string $key): string
+    {
+        if ($person instanceof Model) {
             foreach ([config('session-replay.viewer.user_label', 'email'), 'name', 'email'] as $attribute) {
-                $label = $user->getAttribute((string) $attribute);
+                $label = $person->getAttribute((string) $attribute);
 
                 if (is_scalar($label) && (string) $label !== '') {
                     return (string) $label;
@@ -313,7 +334,7 @@ class SessionReplayPlugin implements Plugin
             }
         }
 
-        return '#'.$session->user_id;
+        return '#'.$key;
     }
 
     public function tenantLabel(ReplaySession $session): ?string
@@ -335,7 +356,11 @@ class SessionReplayPlugin implements Plugin
         return is_scalar($label) && (string) $label !== '' ? (string) $label : '#'.$session->tenant_id;
     }
 
-    /** @return list<string> */
+    /**
+     * @internal The readers below serve the resource; configure with the setters above.
+     *
+     * @return list<string>
+     */
     public function getSearchPeopleBy(): array
     {
         return $this->searchPeopleBy;

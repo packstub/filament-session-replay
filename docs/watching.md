@@ -8,7 +8,7 @@ Newest first (`started_at`, descending).
 
 | Column | What it shows |
 | --- | --- |
-| **Person** | The person's label (see [People](people.md#naming-people)), "Guest" for a recording without a person, and "Impersonated by #id" underneath when someone was impersonating. Searching the table finds people by name or email, and by their key: type `42` to find user 42 (see [People](people.md#finding-people)). |
+| **Person** | The person's label (see [People](people.md#naming-people)), "Guest" for a recording without a person, and "Impersonated by grace@example.com" (or `#id`, when only a key is known) underneath when someone was impersonating. Searching the table finds people by name or email, and by their key: type `42` to find user 42 (see [People](people.md#finding-people)). |
 | **Workspace** | The tenant's `name`, what `tenantLabelUsing()` returns, or `#id`. Visible when the list holds every workspace: a panel without a current tenant (the operator's view), or one with `scopeToTenant(false)`. Toggleable. |
 | **Started** | Relative time with the full date in the tooltip; a green badge while the recording is still receiving events. Sortable. |
 | **Length** | Wall-clock length, for example `4m 12s`. |
@@ -18,6 +18,7 @@ Newest first (`started_at`, descending).
 | **Vitals** | Good, Needs improvement or Poor: the worst rating among the measured LCP, INP and CLS, with the values in the tooltip. |
 | **Device** | Desktop, Tablet or Mobile. Toggleable. |
 | **First page** | The entry URL without the scheme, full URL in the tooltip. Toggleable. |
+| **Reported** | A badge on recordings where the person reported a problem (`SessionReplay.send()`). Toggleable. |
 | **Pinned** | A bookmark icon on pinned recordings. Toggleable. |
 | **Size** | As stored (gzip). Hidden by default, sortable. |
 
@@ -28,6 +29,7 @@ Newest first (`started_at`, descending).
 | **Errors** | `errors` | Ternary: all, "With errors" (`error_count > 0`), "Without errors". |
 | **Slow pages (poor vitals)** | `poor_vitals` | Toggle. LCP above 4000 ms, INP above 500 ms or CLS above 0.25. |
 | **Rage clicks** | `rage_clicks` | Toggle. At least one rage click. |
+| **Reported a problem** | `reported` | Toggle. Recordings where the person pressed a "report a problem" button (`SessionReplay.send()`); the **Reported** column badges them. |
 | **Impersonated** | `impersonated` | Toggle. Recordings made while someone was impersonating. |
 | **Pinned** | `pinned` | Toggle. |
 | **Device** | `device` | Select: Desktop, Tablet, Mobile. |
@@ -46,9 +48,13 @@ The title is the person, the subheading the start time.
 
 - **The facts**: length (with a badge while live), pages, errors, vitals (`LCP 1840 ms · INP 96 ms · CLS 0.020`), device and viewport, size, who impersonated (when someone did), the first page (copyable), and a note when the recording reached `ingest.max_session_mb` and was cut short.
 - **The player**: the core's `<x-session-replay::player>` inside a `wire:ignore` wrapper, so a Livewire re-render of the page leaves it alone. Play, speed (1x to 8x), skip inactivity and fullscreen. Markers are drawn on the timeline in their colour.
-- **The marker list** next to the player: one chip per kind of marker with its count (Page, Error, Request, Console, Rage click, Vital, Custom) to show or hide that kind, and the markers themselves with their time. A click seeks to a second before the moment. Vitals start hidden.
+- **The marker list** next to the player: one chip per kind of marker with its count (Page, Error, Request, Console, Rage click, Vital, Custom, Report) to show or hide that kind, and the markers themselves with their time. A click seeks to a second before the moment and opens the marker's details under the list (a server error's exception, status and path with **Copy report id** and, with `SessionReplay::logUrlUsing()` in the app, **Open in logs**; a failed request's status and URL; where a rage click happened). Vitals start hidden. **Copy link to this moment** under the controller copies the page's URL with `?t=` at the second the replay is at.
 
-Adding `?t=83` to the URL opens the replay at 1:23, which is handy in a ticket. The marker kinds, their colours and the player's events are described in the core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-player).
+The player starts paused; `viewer.autoplay = true` in the core's config starts it as soon as it is ready, from the linked moment with `?t=` or `?at=`.
+
+Adding `?t=83` to the URL opens the replay at 1:23, which is handy in a ticket; a log line's `session_replay_moment` link opens it with `?at=` a moment before the request. The marker kinds, their colours, the details and the player's events are described in the core's [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md#the-player).
+
+A "report a problem" button on a recorded panel page is a call to `SessionReplay.send()`, for example a header action with `->alpineClickHandler("SessionReplay.send('Problem reported')")`; the recording then carries a `report` marker and is listed under the **Reported a problem** filter. The recorder is not on the Sessions resource's own pages, so `window.SessionReplay` is undefined there.
 
 ### Header actions
 
@@ -105,7 +111,7 @@ Until `viewSessionReplay` is defined, only the local environment is let in, so t
 
 Pinning is part of watching: anyone who may open a recording may also pin it, and a pinned recording stays past `retention.days` until someone unpins or deletes it. Give watch access with that in mind, and look at the **Pinned** filter now and then to unpin what is no longer needed.
 
-The gate is asked for the list as a whole. A rule that depends on the recording (like the one above) blocks the watch page and the data, while the row still appears in the list. To narrow the list too, scope the panel to a workspace ([Tenancy](tenancy.md)) or extend the resource and override `getEloquentQuery()`.
+The gate is asked for the list as a whole. A rule that depends on the recording (like the one above) blocks the watch page and the data, while the row still appears in the list. To narrow the list too, scope the panel to a workspace ([Tenancy](tenancy.md)) or tell the list the rule with `SessionReplay::visibleUsing()`, below.
 
 ### Rows the gate would refuse
 
@@ -124,7 +130,7 @@ The resource, a person's Session replays tab, the stats widget and the Watch las
 
 ### Policies and Filament Shield
 
-When a policy is registered for `Packstub\SessionReplay\Models\ReplaySession`, the resource follows Filament's usual policy checks instead of the gate: `viewAny`, `view`, `delete` and `deleteAny`. That is how [Filament Shield](https://github.com/bezhanSalleh/filament-shield) permissions plug in: generate the policy for the resource and assign the permissions to roles.
+When a policy is registered for `Packstub\SessionReplay\Models\ReplaySession` and the app defines no `viewSessionReplay` gate, the resource, the watch page, the export and the core's data routes all follow the policy: `viewAny` for the list, `view` for a recording; `delete` and `deleteAny` for deleting. That is how [Filament Shield](https://github.com/bezhanSalleh/filament-shield) permissions plug in: generate the policy for the resource and assign the permissions to roles.
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -133,7 +139,7 @@ use Packstub\SessionReplay\Models\ReplaySession;
 Gate::policy(ReplaySession::class, \App\Policies\ReplaySessionPolicy::class);
 ```
 
-One thing to keep in step: the player loads the manifest, the chunks and the stylesheets from the core's routes, and those always ask the `viewSessionReplay` gate. With a policy in place, define the gate as well and let it delegate, so the page and the data agree:
+A `viewSessionReplay` gate, once defined, decides over the policy everywhere (the installer's stub defines one). To keep the stub's gate and let Shield decide, make the gate delegate:
 
 ```php
 Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = null): bool {
@@ -143,6 +149,6 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 });
 ```
 
-Without the gate, a person the policy allows would open the watch page and see "You are not allowed to watch this recording" in the player. The export asks both, too.
+Deleting asks the policy's `delete` and `deleteAny` whenever a policy is registered, gate or not.
 
 In a multi-tenant panel, a generated policy checks a permission, not the workspace: the panel finds a recording through its scoped query, but the core's data routes take a recording id from the URL. Check the workspace in the policy's `view` (`$session->tenant_id`), as in [Tenancy](tenancy.md), so the data routes refuse another workspace's recording as well.

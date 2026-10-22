@@ -4,9 +4,16 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ## Unreleased
 
+### Added
+
+- **Reported recordings.** A **Reported** column (a badge on recordings where the person pressed a "report a problem" button, `SessionReplay.send()`) and a **Reported a problem** filter (`reported`), so support finds what people reported. New strings in all four languages.
+- **The impersonator named like a person.** When the core keeps the impersonator as a model (Session Replay 1.0: `impersonatorUsing()` may return the model; the plugin passes Packstub's Account Switcher's impersonator model through), the list says "Impersonated by grace@example.com" (`viewer.user_label`, name, email) and the watch page names them too; a bare key is shown as `#7`, as before. `SessionReplayPlugin::impersonatorLabel($session)` is the helper.
+
 ### Changed
 
-- **Requires Session Replay 1.0.0-beta.3 or newer** (`packstub/session-replay: ^1.0.0-beta.3`): Export reads the shared page snapshots that version introduced.
+- **Requires Session Replay 1.0** (`packstub/session-replay: ^1.0`): the `report` marker, the impersonator model and the policy path in `SessionReplay::check()` are from there.
+- **The gate decides before a policy, as it does for the player's data.** The resource asked a `ReplaySession` policy first and the `viewSessionReplay` gate only without one, while the core's data routes ask the gate first and the policy only without a gate, so an app with the installer's gate and a Shield policy opened the watch page to a person the policy allowed and the player answered "You are not allowed to watch this recording". The resource now asks `SessionReplay::check()` for the list, the watch page and the export: the gate when the app defined it, else the policy (`viewAny`, `view`), else the local environment only. `delete` and `deleteAny` keep asking the policy when there is one, else the `deleteSessionReplay` gate.
+- **Methods that serve the resource are marked `@internal`** (`SessionReplayPlugin::recorder()` and its `get*()` readers, `ReplaySessionResource::searchPeople()`, `shortUrl()`, `listsEveryWorkspace()`, `pinAction()`); `scope()`, `userLabel()`, `tenantLabel()`, `impersonatorLabel()` and `WatchLastSessionAction::lastSession()` are the extension points.
 - **Export carries shared snapshots.** A recording made on a page with shared snapshots (`snapshots.share_routes`, `snapshots.share_paths`) keeps only the snapshot's hash in its events (`{"type": 2, "data": {"srSnapshot": "<sha256>"}}`). The file now has a `snapshots` key with the trees the recording points at, and `assets` includes the stylesheets inside those trees, so the export replays on its own as promised. The key is new; nothing else in the file changed.
 - **Lab.** `workbench/lab/navigate.mjs` checks in a real panel what the recorder does across `wire:navigate`: pages the app does not record stay out of the recording, console messages during a swap are kept, and a page signed for another identity starts a new recording (also in mode `on_error`). The workbench takes `LAB_EXCEPT_ROUTES` and `LAB_IMPERSONATE_ON` for it.
 - **Docs.** A shorter Features list in the README and on the docs index, one line per area.
@@ -15,6 +22,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ### Fixed
 
+- **Export copies only the stylesheets the recording points at**, as the core serves them: a stylesheet may carry a workspace's own theme, and a chunk that named another workspace's stylesheet by hash used to copy it into the file. A recording from before stylesheets were referenced (core 1.0.0-beta.5 and earlier) points at none and keeps every stylesheet it names, as before.
 - **Replay links with the core's pages off.** With `viewer.enabled = false` and no `SessionReplay::urlUsing()` of the app's own, `ReplaySession::url()` and the log context's `session_replay_url` were empty. A panel with the Sessions resource now links to its watch page (with the recording's workspace in a panel with tenancy), and a URL built for a named panel takes that panel's `slug()`.
 - **Export copies stylesheets only.** Assets are looked up by hash and `kind = stylesheet`, so an `/*sr-asset:<sha256>*/` placeholder in an uploaded chunk can no longer copy a stored shared snapshot of another page into the file.
 - **A workspace stays a workspace with `SessionReplay::visibleUsing()`.** The app's rule is applied as a nested group, so an `orWhere` in it no longer lists other workspaces' recordings in a panel with tenancy, or other people's in a person's Session replays tab.
