@@ -51,17 +51,30 @@ it('passes the recording to the gate for the watch page', function () {
     $this->get(ReplaySessionResource::getUrl('view', ['record' => $colleagues]))->assertForbidden();
 });
 
-it('lets a registered policy decide instead, which is how Shield plugs in', function () {
-    Gate::define('viewSessionReplay', fn ($user) => false);
+it('lets a registered policy decide without a gate, which is how Shield plugs in, and the gate decide over it', function () {
     Gate::policy(ReplaySession::class, ReplaySessionPolicy::class);
 
     $session = $this->recording();
 
-    $this->actingAs($this->user(['is_staff' => true]));
+    $this->actingAs($staff = $this->user(['is_staff' => true]));
 
+    // The policy alone: viewAny and view open the list, the page and (in the core) the player's data; delete says no.
     expect(ReplaySessionResource::canViewAny())->toBeTrue()
         ->and(ReplaySessionResource::canView($session))->toBeTrue()
+        ->and(ReplaySessionResource::canDelete($session))->toBeFalse()
+        ->and(SessionReplay::check($session, $staff))->toBeTrue();
+
+    $this->get(ReplaySessionResource::getUrl('view', ['record' => $session]))->assertOk();
+    $this->get(route('session-replay.manifest', $session))->assertOk();
+
+    // A gate the app defines wins, as it does for the core's data routes: the page and the player cannot disagree.
+    Gate::define('viewSessionReplay', fn ($user) => false);
+
+    expect(ReplaySessionResource::canViewAny())->toBeFalse()
+        ->and(ReplaySessionResource::canView($session))->toBeFalse()
         ->and(ReplaySessionResource::canDelete($session))->toBeFalse();
+
+    $this->get(ReplaySessionResource::getUrl('view', ['record' => $session]))->assertForbidden();
 });
 
 it('lists recordings and filters them by what was marked', function () {
@@ -74,15 +87,19 @@ it('lists recordings and filters them by what was marked', function () {
     $slow = $this->recording(markers: [['type' => 'vital', 'label' => 'INP', 'payload' => ['name' => 'INP', 'value' => 900], 'at' => $now]]);
     $angry = $this->recording(markers: [['type' => 'rage-click', 'label' => 'button', 'at' => $now]]);
     $watched = $this->recording(impersonator: '5');
+    $reported = $this->recording(markers: [['type' => 'report', 'label' => 'Wrong total', 'at' => $now]]);
     $kept = $this->recording(attributes: ['pinned' => true, 'device' => 'mobile', 'entry_url' => 'https://app.test/admin/invoices/7']);
 
     $this->actingAs($ada);
 
     Livewire::test(ListReplaySessions::class)
-        ->assertCanSeeTableRecords([$broken, $slow, $angry, $watched, $kept])
+        ->assertCanSeeTableRecords([$broken, $slow, $angry, $watched, $kept, $reported])
         ->assertSee('ada@example.com')
         ->assertSee('Impersonated by #5')
+        ->assertTableColumnStateSet('reported', 'Reported', $reported)
+        ->assertTableColumnStateSet('reported', null, $broken)
         ->filterTable('errors')->assertCanSeeTableRecords([$broken])->assertCanNotSeeTableRecords([$slow, $angry])->resetTableFilters()
+        ->filterTable('reported')->assertCanSeeTableRecords([$reported])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
         ->filterTable('poor_vitals')->assertCanSeeTableRecords([$slow])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
         ->filterTable('rage_clicks')->assertCanSeeTableRecords([$angry])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
         ->filterTable('impersonated')->assertCanSeeTableRecords([$watched])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
@@ -90,6 +107,45 @@ it('lists recordings and filters them by what was marked', function () {
         ->filterTable('device', 'mobile')->assertCanSeeTableRecords([$kept])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
         ->filterTable('url', ['contains' => 'invoices'])->assertCanSeeTableRecords([$kept])->assertCanNotSeeTableRecords([$broken])->resetTableFilters()
         ->searchTable((string) $ada->id)->assertCanSeeTableRecords([$broken]);
+});
+
+it('names the impersonator like a person when the hook handed over a model, by key otherwise', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $support = $this->user(['name' => 'Grace Hopper', 'email' => 'grace@example.com']);
+    $byModel = $this->recording(impersonator: $support);
+    $byKey = $this->recording(impersonator: (string) $support->id);
+
+    expect($byModel->impersonator_type)->toBe($support->getMorphClass())
+        ->and($byModel->impersonator->is($support))->toBeTrue()
+        ->and($byKey->impersonator_type)->toBeNull()
+        ->and(SessionReplayPlugin::get()->impersonatorLabel($byModel))->toBe('grace@example.com')
+        ->and(SessionReplayPlugin::get()->impersonatorLabel($byKey))->toBe('#'.$support->id)
+        ->and(SessionReplayPlugin::get()->impersonatorLabel($this->recording()))->toBeNull();
+
+    $this->actingAs($this->user());
+
+    Livewire::test(ListReplaySessions::class)->assertSee('Impersonated by grace@example.com')->assertSee('Impersonated by #'.$support->id);
+    $this->get(ReplaySessionResource::getUrl('view', ['record' => $byModel]))->assertOk()->assertSee('grace@example.com');
+
+    // The panel's own hook passes what impersonatorUsing() returns through, a model included.
+    SessionReplayPlugin::get()->impersonatorUsing(fn () => $support);
+    $token = (new ReflectionMethod(SessionReplayPlugin::class, 'impersonator'))->invoke(SessionReplayPlugin::get());
+
+    expect($token)->toBe($support);
+});
+
+it('starts the watch page\'s player paused unless viewer.autoplay says otherwise', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $session = $this->recording();
+    $this->actingAs($this->user());
+
+    $this->get(ReplaySessionResource::getUrl('view', ['record' => $session]))->assertSee('data-autoplay="false"', false);
+
+    config()->set('session-replay.viewer.autoplay', true);
+
+    $this->get(ReplaySessionResource::getUrl('view', ['record' => $session]))->assertSee('data-autoplay="true"', false);
 });
 
 it('lists only the current workspace\'s recordings in a panel with tenancy, unless told otherwise', function () {
@@ -167,15 +223,38 @@ it('exports a recording as one JSON file that carries its stylesheets', function
     $response->assertFileDownloaded('session-replay-'.$session->id.'.json');
 });
 
-it('asks the gate before an export, like the core\'s data routes, even when a policy opens the page', function () {
-    Gate::define('viewSessionReplay', fn ($user) => false);
+it('offers the export to whoever may watch, a policy without a gate included', function () {
     Gate::policy(ReplaySession::class, ReplaySessionPolicy::class);
 
     $session = $this->recording();
 
     $this->actingAs($this->user(['is_staff' => true]));
 
-    Livewire::test(ViewReplaySession::class, ['record' => $session->id])->assertActionHidden('export');
+    Livewire::test(ViewReplaySession::class, ['record' => $session->id])->assertActionVisible('export');
+});
+
+it('exports only the stylesheets the recording points at, as the core serves them, unless it points at none', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $mine = storeReplayAsset(ReplayAsset::STYLESHEET, 'body { color: rebeccapurple }');
+    $theirs = storeReplayAsset(ReplayAsset::STYLESHEET, 'body { color: tomato } /* another workspace */');
+
+    $events = fn (string ...$hashes): string => gzencode(json_encode(array_map(fn (string $hash, int $i): array => ['type' => 2, 'timestamp' => $i, 'data' => ['node' => ['type' => 2, 'tagName' => 'style', 'attributes' => ['_cssText' => '/*sr-asset:'.$hash.'*/'], 'childNodes' => [], 'id' => 1]]], $hashes, array_keys($hashes))));
+
+    $referenced = $this->recording($user = $this->user());
+    ReplaySessionAsset::query()->insert(['replay_session_id' => $referenced->id, 'hash' => $mine, 'created_at' => now()]);
+    Storage::disk('replays')->put($referenced->chunks()->sole()->path, $events($mine, $theirs));
+
+    // From before stylesheets were referenced: every stylesheet it names, as before.
+    $old = $this->recording($user);
+    Storage::disk('replays')->put($old->chunks()->sole()->path, $events($mine, $theirs));
+
+    $this->actingAs($user);
+
+    $export = fn (ReplaySession $session): array => json_decode(base64_decode(Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export')->effects['download']['content']), true);
+
+    expect(array_keys($export($referenced)['assets']))->toBe([$mine])
+        ->and(array_keys($export($old)['assets']))->toEqualCanonicalizing([$mine, $theirs]);
 });
 
 it('leaves a chunk that is not a JSON array out of an export', function () {

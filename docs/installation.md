@@ -128,7 +128,7 @@ SessionReplayPlugin::make()
 | `resource(bool\|Closure $condition = true)` | `true` | Register the Sessions resource in this panel. `false` for a panel that is recorded but is not where recordings are watched. |
 | `widget(bool $condition = true)` | off | Register `ReplayStatsWidget` on the panel. See [People](people.md#the-stats-widget). |
 | `properties(array\|Closure $properties)` | `[]` | Extra properties kept on every recording of this panel, next to `panel`. A closure receives `$user`. |
-| `impersonatorUsing(Closure $callback)` | Account Switcher, when installed | Returns the key of the person who is impersonating, or null. |
+| `impersonatorUsing(Closure $callback)` | [Account Switcher](https://packstub.dev/docs/filament-account-switcher), when installed (see [Impersonation](tenancy.md#impersonation)) | Returns the person who is impersonating (a model, named in the list; or their key, shown as `#key`), or null. |
 | `userLabelUsing(Closure $callback)` | see [People](people.md#naming-people) | Returns how a person is named in the table and on the watch page: `fn (ReplaySession $session): ?string`. |
 | `tenantLabelUsing(Closure $callback)` | the tenant's `name` | Returns how a workspace is named in the Workspace column: `fn (ReplaySession $session): ?string`. See [Tenancy](tenancy.md#naming-workspaces). |
 | `searchPeopleBy(array $columns)` | `['name', 'email']` | The columns of your people's tables the table search looks in. See [People](people.md#finding-people). |

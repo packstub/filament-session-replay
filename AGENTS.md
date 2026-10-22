@@ -11,7 +11,7 @@ composer lint               # Pint
 composer serve              # Testbench workbench: a recorded panel on :8000/admin, signed in, recordings under Support
 ```
 
-The core comes from Packagist. `minimum-stability` is `beta` while the core is in beta; set it back to `stable` at 1.0. To work on both packages at once, add a path repository to `../session-replay` locally and leave it out of the commit.
+The core comes from Packagist (`^1.0`, `minimum-stability` `stable`). To work on both packages at once, add a path repository to `../session-replay` locally and leave it out of the commit.
 
 ## Layout
 
