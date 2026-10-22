@@ -26,6 +26,6 @@ Privacy defaults, consent, storage, pruning, limits and the log context come fro
 | [Watching](watching.md) | The resource's columns and filters, the watch page, Pin, Export and Delete, who may do what, policies and Filament Shield |
 | [Masking](masking.md) | `maskInReplay()` and `blockInReplay()` on fields, columns, entries and layout components |
 | [People](people.md) | `HasSessionReplays`, the relation manager, `WatchLastSessionAction`, `ReplayStatsWidget`, naming people |
-| [Tenancy](tenancy.md) | Workspaces, operator panels, database-per-tenant apps, the Account Switcher and impersonation |
+| [Tenancy](tenancy.md) | Workspaces, operator panels, database-per-tenant apps, [Account Switcher](https://packstub.dev/docs/filament-account-switcher) and impersonation |
 
 From the core: [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md), [Privacy](https://github.com/packstub/session-replay/blob/main/docs/privacy.md), [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md), [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md), [Error tracking](https://github.com/packstub/session-replay/blob/main/docs/error-tracking.md), [Configuration](https://github.com/packstub/session-replay/blob/main/docs/configuration.md).
