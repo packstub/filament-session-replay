@@ -8,6 +8,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 - **Docs.** The README shows an animation of the watch page: a rage click, the server error's details and "Open in logs". Docs sync to packstub.dev on every change to `docs/` (`docs-sync.yml`).
 - **Docs.** The README links the full documentation on packstub.dev, and its Changelog and License links are absolute, so they work on the filamentphp.com listing.
+- **Docs.** A "Listed on filamentphp.com" badge in the README.
 
 ## 1.0.0 — 2026-10-22
 
