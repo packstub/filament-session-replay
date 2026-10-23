@@ -14,6 +14,8 @@
 
 Session replay inside your Filament panel. "The form did nothing when I clicked save" becomes a replay you watch next to the user it belongs to, with the failed Livewire request, the JavaScript error and the rage click marked on the timeline. Recordings stay on your own disk and database, and who may watch them is a gate your app defines. Free and open source (MIT), built on [Session Replay for Laravel](https://github.com/packstub/session-replay) and [rrweb](https://github.com/rrweb-io/rrweb).
 
+![A replay on the watch page: the pointer clicks "Save changes" again and again, the save fails, and the server error's details open with its report id and "Open in logs"](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/demo.gif)
+
 ## Features
 
 - **[Recording without a directive](#recording-a-panel)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
