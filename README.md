@@ -167,6 +167,8 @@ Everything about privacy, storage, consent and configuration lives in the core a
 
 ## Documentation
 
+The full documentation, both packages' guides in one place, is on [packstub.dev/docs/filament-session-replay](https://packstub.dev/docs/filament-session-replay). On GitHub:
+
 | Guide | What it covers |
 | --- | --- |
 | [Overview](https://github.com/packstub/filament-session-replay/tree/main/docs) | What you get, at a glance |
@@ -186,7 +188,7 @@ composer test
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](https://github.com/packstub/filament-session-replay/blob/main/CHANGELOG.md).
 
 ## Security
 
@@ -199,4 +201,4 @@ Please report security issues to support@packstub.dev instead of the issue track
 
 ## License
 
-MIT. See [LICENSE.md](LICENSE.md).
+MIT. See [LICENSE.md](https://github.com/packstub/filament-session-replay/blob/main/LICENSE.md).
