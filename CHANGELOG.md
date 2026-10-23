@@ -2,6 +2,12 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
+## Unreleased
+
+### Changed
+
+- **Docs.** The README shows an animation of the watch page: a rage click, the server error's details and "Open in logs". Docs sync to packstub.dev on every change to `docs/` (`docs-sync.yml`).
+
 ## 1.0.0 — 2026-10-22
 
 ### Added
