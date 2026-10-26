@@ -149,15 +149,14 @@ class ViewReplaySession extends ViewRecord
             // The stylesheets the events and the snapshots point at (/*sr-asset:<sha256>*/), so the file replays on its own.
             // Stylesheets only: a placeholder naming a snapshot's hash must not copy that snapshot into the file. And only
             // the ones the recording points at, as the core's data route serves them (a stylesheet may carry a workspace's
-            // own theme); a recording from before stylesheets were referenced points at none and keeps every hash it names.
+            // own theme, and a placeholder is what the browser sent); a recording from before stylesheets were
+            // referenced (core 1.0.0-beta.5 and earlier) points at none and exports without them.
             echo '},"assets":{';
 
-            $stylesheets = ReplayAsset::query()->where('kind', ReplayAsset::STYLESHEET)->whereIn('hash', array_keys($hashes));
-            $referenced = $record->snapshotReferences()->whereIn('hash', ReplayAsset::query()->select('hash')->where('kind', ReplayAsset::STYLESHEET))->pluck('hash')->all();
-
-            if ($referenced !== []) {
-                $stylesheets->whereIn('hash', $referenced);
-            }
+            $stylesheets = ReplayAsset::query()
+                ->where('kind', ReplayAsset::STYLESHEET)
+                ->whereIn('hash', array_keys($hashes))
+                ->whereIn('hash', $record->snapshotReferences()->select('hash'));
 
             foreach ($stylesheets->get() as $index => $asset) {
                 $css = @gzdecode((string) $storage->get($asset->path));

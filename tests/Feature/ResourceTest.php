@@ -233,7 +233,7 @@ it('offers the export to whoever may watch, a policy without a gate included', f
     Livewire::test(ViewReplaySession::class, ['record' => $session->id])->assertActionVisible('export');
 });
 
-it('exports only the stylesheets the recording points at, as the core serves them, unless it points at none', function () {
+it('exports only the stylesheets the recording points at, as the core serves them', function () {
     Gate::define('viewSessionReplay', fn ($user) => true);
 
     $mine = storeReplayAsset(ReplayAsset::STYLESHEET, 'body { color: rebeccapurple }');
@@ -245,7 +245,7 @@ it('exports only the stylesheets the recording points at, as the core serves the
     ReplaySessionAsset::query()->insert(['replay_session_id' => $referenced->id, 'hash' => $mine, 'created_at' => now()]);
     Storage::disk('replays')->put($referenced->chunks()->sole()->path, $events($mine, $theirs));
 
-    // From before stylesheets were referenced: every stylesheet it names, as before.
+    // From before stylesheets were referenced (core 1.0.0-beta.5 and earlier), or pointing at another workspace's: none.
     $old = $this->recording($user);
     Storage::disk('replays')->put($old->chunks()->sole()->path, $events($mine, $theirs));
 
@@ -254,7 +254,7 @@ it('exports only the stylesheets the recording points at, as the core serves the
     $export = fn (ReplaySession $session): array => json_decode(base64_decode(Livewire::test(ViewReplaySession::class, ['record' => $session->id])->callAction('export')->effects['download']['content']), true);
 
     expect(array_keys($export($referenced)['assets']))->toBe([$mine])
-        ->and(array_keys($export($old)['assets']))->toEqualCanonicalizing([$mine, $theirs]);
+        ->and($export($old)['assets'])->toBe([]);
 });
 
 it('leaves a chunk that is not a JSON array out of an export', function () {
@@ -295,7 +295,11 @@ it('exports the shared snapshots a recording points at, and the stylesheets insi
     $elsewhere = storeReplayAsset(ReplayAsset::SNAPSHOT, '{"type":0,"id":1,"childNodes":[],"another":"page"}');
 
     $session = $this->recording($user = $this->user());
-    ReplaySessionAsset::query()->insert(['replay_session_id' => $session->id, 'hash' => $page, 'created_at' => now()]);
+    // The recording points at the snapshot and at the stylesheet inside it, as the core records both from its uploads.
+    ReplaySessionAsset::query()->insert([
+        ['replay_session_id' => $session->id, 'hash' => $page, 'created_at' => now()],
+        ['replay_session_id' => $session->id, 'hash' => $css, 'created_at' => now()],
+    ]);
 
     Storage::disk('replays')->put($session->chunks()->sole()->path, gzencode(json_encode([
         ['type' => 4, 'timestamp' => 1, 'data' => ['href' => 'https://app.test/admin']],
