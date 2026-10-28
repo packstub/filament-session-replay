@@ -26,6 +26,7 @@ Newest first (`started_at`, descending).
 
 | Filter | Name | What it does |
 | --- | --- | --- |
+| **Person** | `person` | One person's recordings: their key in **Person ID**, their morph type in a hidden `type`. The indicator names them the way the list does. `ReplaySessionResource::getUrlForPerson($user)` is the URL of the list with this filter on. |
 | **Errors** | `errors` | Ternary: all, "With errors" (`error_count > 0`), "Without errors". |
 | **Slow pages (poor vitals)** | `poor_vitals` | Toggle. LCP above 4000 ms, INP above 500 ms or CLS above 0.25. |
 | **Rage clicks** | `rage_clicks` | Toggle. At least one rage click. |
@@ -36,7 +37,7 @@ Newest first (`started_at`, descending).
 | **First page contains** | `url` | Text. Matches part of the entry URL, for example `invoices`. |
 | **From / Until** | `started` | Two dates on `started_at`. |
 
-The filter names are what you use in a URL or a test, for example `->filterTable('poor_vitals')`.
+The filter names are what you use in a URL or a test, for example `->filterTable('poor_vitals')`. In a URL the filters sit under `filters`, so `?filters[person][id]=7` opens the list for person 7; `ReplaySessionResource::getUrlForPerson($user)` builds that URL for you (the current panel and workspace, or the ones you pass).
 
 ### Row actions
 

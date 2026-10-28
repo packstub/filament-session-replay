@@ -10,6 +10,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
 use Filament\Panel;
 use Filament\Resources\Resource;
@@ -142,6 +143,48 @@ class ReplaySessionResource extends Resource
     public static function listsEveryWorkspace(): bool
     {
         return Filament::getTenant() === null || ! SessionReplayPlugin::get()->isScopedToTenant();
+    }
+
+    /**
+     * How the Person filter names its person: the way the list names them
+     * when they have a recording in it, else like any person from their
+     * model when the type names one, else by key.
+     *
+     * @internal
+     *
+     * @param  array{type?: ?string, id?: ?string}  $data
+     */
+    public static function personLabel(array $data): string
+    {
+        $id = (string) ($data['id'] ?? '');
+        $type = (string) ($data['type'] ?? '');
+
+        $session = static::scope(ReplaySession::query())
+            ->where('user_id', $id)
+            ->when($type !== '', fn (Builder $query) => $query->where('user_type', $type))
+            ->with('user')
+            ->first();
+
+        if ($session !== null) {
+            return SessionReplayPlugin::get()->userLabel($session);
+        }
+
+        $class = $type === '' ? null : (Relation::getMorphedModel($type) ?? $type);
+        $person = is_string($class) && is_subclass_of($class, Model::class) ? $class::query()->find($id) : null;
+
+        return SessionReplayPlugin::get()->personLabel($person, $id);
+    }
+
+    /**
+     * The URL of the list, filtered to one person's recordings (the current
+     * panel and workspace unless given). The list page reads its filters from
+     * the `filters` query parameter.
+     */
+    public static function getUrlForPerson(Model $person, ?string $panel = null, ?Model $tenant = null): string
+    {
+        return static::getUrl('index', [
+            'filters' => ['person' => ['type' => $person->getMorphClass(), 'id' => (string) $person->getKey()]],
+        ], panel: $panel, tenant: $tenant);
     }
 
     /**
@@ -399,6 +442,15 @@ class ReplaySessionResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                // One person's recordings: the deep link getUrlForPerson() builds (Account Switcher's banner lands
+                // on it), or a key typed by hand.
+                Filter::make('person')
+                    ->label(__('Person'))
+                    ->schema([Hidden::make('type'), TextInput::make('id')->label(__('Person ID'))])
+                    ->query(fn (Builder $query, array $data) => $query->when(filled($data['id'] ?? null), fn (Builder $query) => $query
+                        ->where('user_id', (string) $data['id'])
+                        ->when(filled($data['type'] ?? null), fn (Builder $query) => $query->where('user_type', (string) $data['type']))))
+                    ->indicateUsing(fn (array $data): ?string => filled($data['id'] ?? null) ? __('Person: :who', ['who' => static::personLabel($data)]) : null),
                 TernaryFilter::make('errors')
                     ->label(__('Errors'))
                     ->placeholder(__('All'))

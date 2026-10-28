@@ -4,6 +4,10 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ## Unreleased
 
+### Added
+
+- **Person filter and a deep link to one person's recordings.** The Sessions list gets a **Person** filter (`person`: the person's key, and their morph type in a hidden field), with an indicator that names the person the way the list does. `ReplaySessionResource::getUrlForPerson($user, ?$panel, ?$tenant)` is the URL of the list with that filter on, for your own pages and for [Account Switcher](https://packstub.dev/docs/filament-account-switcher)'s impersonation banner, whose **Session replays** button (Account Switcher 4.4) lands on it. See [Watching](docs/watching.md#filters) and [People](docs/people.md#one-persons-recordings).
+
 ### Changed
 
 - **Docs.** The README shows an animation of the watch page: a rage click, the server error's details and "Open in logs". Docs sync to packstub.dev on every change to `docs/` (`docs-sync.yml`).
