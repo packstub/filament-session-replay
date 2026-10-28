@@ -110,6 +110,8 @@ A recording made while someone is impersonating a customer names the impersonato
 
 With [Packstub's Account Switcher](https://packstub.dev/docs/filament-account-switcher) installed this is automatic: the plugin asks `Packstub\AccountSwitcher\AccountSwitcher` whether someone is impersonating and takes that person.
 
+The link goes both ways: while impersonating, Account Switcher's banner (4.4 or later) offers **Session replays**, which ends the impersonation and opens this resource filtered to the person who was impersonated, in a panel where the support person may watch (and in that person's workspace, in a panel with tenancy). It appears only when this plugin is registered with the resource on and `SessionReplay::check()` lets the impersonator watch; nothing to set up on this side.
+
 With another impersonation package, tell the plugin where to look:
 
 ```php

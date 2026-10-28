@@ -321,8 +321,12 @@ class SessionReplayPlugin implements Plugin
         return $this->personLabel($session->impersonator_type === null ? null : $session->impersonator, $session->impersonator_id);
     }
 
-    /** viewer.user_label, name or email of the model, whichever is set first; #key without a model or when all are empty. */
-    protected function personLabel(mixed $person, string $key): string
+    /**
+     * viewer.user_label, name or email of the model, whichever is set first; #key without a model or when all are empty.
+     *
+     * @internal
+     */
+    public function personLabel(mixed $person, string $key): string
     {
         if ($person instanceof Model) {
             foreach ([config('session-replay.viewer.user_label', 'email'), 'name', 'email'] as $attribute) {

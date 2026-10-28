@@ -42,5 +42,7 @@
     "Without errors": "Без ошибок",
     "Workspace": "Рабочее пространство",
     "session replay": "запись сессии",
-    "session replays": "записи сессий"
+    "session replays": "записи сессий",
+    "Person ID": "ID человека",
+    "Person: :who": "Человек: :who"
 }

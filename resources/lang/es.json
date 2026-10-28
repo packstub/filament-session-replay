@@ -42,5 +42,7 @@
     "Without errors": "Sin errores",
     "Workspace": "Espacio de trabajo",
     "session replay": "repetición de sesión",
-    "session replays": "repeticiones de sesión"
+    "session replays": "repeticiones de sesión",
+    "Person ID": "ID de la persona",
+    "Person: :who": "Persona: :who"
 }

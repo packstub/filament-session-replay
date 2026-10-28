@@ -545,3 +545,67 @@ it('links a recording to the panel\'s watch page while the core\'s own pages are
 
     expect(ReplaySessionResource::getRouteBaseName(Filament::getPanel('admin')))->toBe('filament.admin.resources.replays');
 });
+
+it('filters the list to one person, named like the list names them, and deep-links to it', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+
+    $grace = $this->user(['name' => 'Grace Hopper', 'email' => 'grace@example.com']);
+    $hers = $this->recording($grace);
+    $other = $this->recording($this->user(['name' => 'Alan Turing']));
+
+    $this->actingAs($grace);
+
+    Livewire::test(ListReplaySessions::class)
+        ->filterTable('person', ['type' => $grace->getMorphClass(), 'id' => (string) $grace->getKey()])
+        ->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
+        ->assertSee('Person: grace@example.com')
+        ->resetTableFilters()
+        ->filterTable('person', ['id' => (string) $grace->getKey()])
+        ->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
+        ->resetTableFilters()
+        ->filterTable('person', ['type' => 'App\\Models\\Admin', 'id' => (string) $grace->getKey()])
+        ->assertCanNotSeeTableRecords([$hers, $other])
+        ->assertSee('Person: #'.$grace->getKey())
+        ->resetTableFilters()
+        // No recording yet: named from their model all the same.
+        ->filterTable('person', ['type' => $grace->getMorphClass(), 'id' => (string) $this->user(['email' => 'new@example.com'])->getKey()])
+        ->assertCanNotSeeTableRecords([$hers, $other])
+        ->assertSee('Person: new@example.com');
+
+    $url = ReplaySessionResource::getUrlForPerson($grace);
+
+    expect($url)->toStartWith(ReplaySessionResource::getUrl())
+        ->and(urldecode($url))->toContain('filters[person][type]='.$grace->getMorphClass(), 'filters[person][id]='.$grace->getKey());
+
+    $this->get($url)->assertOk();
+
+    // The table is loaded after the page: the query string reaches the filter through Livewire.
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+    Livewire::withQueryParams($query)->test(ListReplaySessions::class)
+        ->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
+        ->assertSee('Person: grace@example.com');
+});
+
+it('names the filtered person through userLabelUsing() whether or not they have a recording yet', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+    SessionReplayPlugin::get()->userLabelUsing(fn (ReplaySession $session) => $session->user?->name);
+
+    $grace = $this->user(['name' => 'Grace Hopper', 'email' => 'grace@example.com']);
+    $this->recording($grace);
+    $ada = $this->user(['name' => 'Ada Lovelace', 'email' => 'ada@example.com']);
+
+    $this->actingAs($grace);
+
+    Livewire::test(ListReplaySessions::class)
+        ->filterTable('person', ['type' => $grace->getMorphClass(), 'id' => (string) $grace->getKey()])
+        ->assertSee('Person: Grace Hopper')
+        ->resetTableFilters()
+        ->filterTable('person', ['type' => $ada->getMorphClass(), 'id' => (string) $ada->getKey()])
+        ->assertSee('Person: Ada Lovelace')
+        ->assertDontSee('Person: ada@example.com')
+        ->resetTableFilters()
+        // No model to name: the closure returns null and the label falls back to the key.
+        ->filterTable('person', ['type' => 'App\\Models\\Admin', 'id' => '999'])
+        ->assertSee('Person: #999');
+});

@@ -124,4 +124,17 @@ SessionReplayPlugin::make()
 
 `searchPeopleBy([])` leaves the search to the key alone.
 
+## One person's recordings
+
+To link to the list filtered to one person, from a page of your own or a notification:
+
+```php
+use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
+
+ReplaySessionResource::getUrlForPerson($user);                       // the current panel and workspace
+ReplaySessionResource::getUrlForPerson($user, 'support', $workspace); // another panel, a given workspace
+```
+
+The list opens with the **Person** filter on, named like the list names them, and the person can clear it to see everyone again. [Account Switcher](https://packstub.dev/docs/filament-account-switcher) uses this URL for the **Session replays** button on its impersonation banner (see [Impersonation](tenancy.md#impersonation)).
+
 These pieces link to the Sessions resource, so use them in a panel where the plugin is registered with the resource on (the default).
