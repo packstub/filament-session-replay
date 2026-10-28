@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
@@ -198,4 +199,28 @@ it('shows a Live now tab with the recordings heard from in the last two minutes,
         ->assertCanSeeTableRecords([$live['session']])
         ->assertCanNotSeeTableRecords([$quiet['session']])
         ->assertSee('last seen 40 s ago');
+});
+
+it('narrows the queue to the panel\'s current workspace in the query, unless told otherwise', function () {
+    $acme = $this->team('Acme');
+    $globex = $this->team('Globex');
+
+    $ours = $this->waiting();
+    $theirs = $this->waiting();
+    $ours->forceFill(['tenant_type' => $acme->getMorphClass(), 'tenant_id' => (string) $acme->getKey()])->save();
+    $theirs->forceFill(['tenant_type' => $globex->getMorphClass(), 'tenant_id' => (string) $globex->getKey()])->save();
+
+    $this->signIn($this->staff());
+
+    expect(PanelAssist::queue()->pluck('id')->all())->toEqualCanonicalizing([$ours->id, $theirs->id]);
+
+    PanelAssist::flush();
+    Filament::setTenant($acme, isQuiet: true);
+
+    expect(PanelAssist::queue()->pluck('id')->all())->toBe([$ours->id]);
+
+    PanelAssist::flush();
+    SessionReplayPlugin::get()->scopeToTenant(false);
+
+    expect(PanelAssist::queue())->toHaveCount(2);
 });

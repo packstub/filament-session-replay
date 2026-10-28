@@ -83,11 +83,8 @@ class PanelAssist
 
         if (! $queue instanceof Collection) {
             $tenant = Filament::getTenant();
-            $queue = app(Assist::class)->queue($agent);
-
-            if ($tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant()) {
-                $queue = $queue->filter(fn (AssistRequest $request): bool => $request->tenant_type === $tenant->getMorphClass() && $request->tenant_id === (string) $tenant->getKey())->values();
-            }
+            // Scoped in the query (and the core's timeouts run over this workspace only, at most every few seconds).
+            $queue = app(Assist::class)->queue($agent, $tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant() ? $tenant : null);
 
             request()->attributes->set($key, $queue);
         }
