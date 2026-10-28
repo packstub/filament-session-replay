@@ -147,8 +147,8 @@ class ReplaySessionResource extends Resource
 
     /**
      * How the Person filter names its person: the way the list names them
-     * when they have a recording in it, else like any person from their
-     * model when the type names one, else by key.
+     * (userLabelUsing() included), from a recording of theirs in it, else
+     * from their model when the type names one, else by key.
      *
      * @internal
      *
@@ -172,7 +172,10 @@ class ReplaySessionResource extends Resource
         $class = $type === '' ? null : (Relation::getMorphedModel($type) ?? $type);
         $person = is_string($class) && is_subclass_of($class, Model::class) ? $class::query()->find($id) : null;
 
-        return SessionReplayPlugin::get()->personLabel($person, $id);
+        // An unsaved recording of the person, so userLabelUsing() names them here as it does in the list.
+        $session = (new ReplaySession)->forceFill(['user_type' => $type === '' ? null : $type, 'user_id' => $id])->setRelation('user', $person);
+
+        return SessionReplayPlugin::get()->userLabel($session);
     }
 
     /**

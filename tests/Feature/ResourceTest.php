@@ -586,3 +586,26 @@ it('filters the list to one person, named like the list names them, and deep-lin
         ->assertCanSeeTableRecords([$hers])->assertCanNotSeeTableRecords([$other])
         ->assertSee('Person: grace@example.com');
 });
+
+it('names the filtered person through userLabelUsing() whether or not they have a recording yet', function () {
+    Gate::define('viewSessionReplay', fn ($user) => true);
+    SessionReplayPlugin::get()->userLabelUsing(fn (ReplaySession $session) => $session->user?->name);
+
+    $grace = $this->user(['name' => 'Grace Hopper', 'email' => 'grace@example.com']);
+    $this->recording($grace);
+    $ada = $this->user(['name' => 'Ada Lovelace', 'email' => 'ada@example.com']);
+
+    $this->actingAs($grace);
+
+    Livewire::test(ListReplaySessions::class)
+        ->filterTable('person', ['type' => $grace->getMorphClass(), 'id' => (string) $grace->getKey()])
+        ->assertSee('Person: Grace Hopper')
+        ->resetTableFilters()
+        ->filterTable('person', ['type' => $ada->getMorphClass(), 'id' => (string) $ada->getKey()])
+        ->assertSee('Person: Ada Lovelace')
+        ->assertDontSee('Person: ada@example.com')
+        ->resetTableFilters()
+        // No model to name: the closure returns null and the label falls back to the key.
+        ->filterTable('person', ['type' => 'App\\Models\\Admin', 'id' => '999'])
+        ->assertSee('Person: #999');
+});
