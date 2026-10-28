@@ -10,6 +10,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ### Changed
 
+- **Who holds a help request is the core's check.** Open live view, Withdraw, End and the live view itself compare the agent by key, model type and guard (the core's `Assist::holds()`), so a panel user and a user of another model with the same key are different people; the live view polls Calls as often as Calls' `poll.active` says instead of every second.
 - **Requires Session Replay 1.1** (`packstub/session-replay: ^1.1`) for Assist: its requests, routes, queue and the stage's host seam (`[data-label]` on a button, the `session-replay:stage` event, leaving the call on `livewire:navigating`).
 
 ## 1.1.0 — 2026-10-28

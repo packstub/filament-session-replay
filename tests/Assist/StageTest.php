@@ -3,6 +3,7 @@
 use Illuminate\Testing\TestResponse;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
+use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Support\Assist;
 
 /** The stage's config, as the view writes it for the core's stage.js. */
@@ -53,7 +54,13 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
         ->and($config['calls']['routes']['poll'])->toBe(route('filament.admin.filament-calls.poll'))
         ->and($config['calls']['routes']['signal'])->toBe(route('filament.admin.filament-calls.signal', ['call' => '__ID__']))
         ->and($config['labels']['buttons']['control'])->toBe('Request control')
+        ->and($config['calls']['pollMs'])->toBe(1000)
         ->and($config['csrf'])->toBeString();
+
+    // As often as Calls says.
+    config()->set('packstub-calls.poll.active', 2500);
+
+    expect(stageConfig($this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id])))['calls']['pollMs'])->toBe(2500);
 });
 
 it('opens the stage to the agent who holds the request only, asking the gate and canAssist again', function () {
@@ -70,6 +77,12 @@ it('opens the stage to the agent who holds the request only, asking the gate and
 
     $this->signIn($agent);
     $this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => '00000000-0000-4000-8000-000000000000']))->assertForbidden();
+
+    // The same key under another model type is someone else (Admin #12 is not User #12).
+    $this->get($url)->assertOk();
+    AssistRequest::query()->whereKey($request->id)->update(['agent_type' => 'App\\Models\\Admin']);
+    $this->get($url)->assertForbidden();
+    AssistRequest::query()->whereKey($request->id)->update(['agent_type' => $agent->getMorphClass()]);
 
     SessionReplay::canAssistUsing(fn () => false);
     $this->get($url)->assertForbidden();

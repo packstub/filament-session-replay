@@ -119,9 +119,8 @@ class PanelAssist
 
     public static function isMine(AssistRequest $request): bool
     {
-        $agent = static::agent();
-
-        return $agent !== null && $request->agent_id === (string) $agent->getAuthIdentifier();
+        // The core's check: the same key, model type and guard as the claim stored.
+        return app(Assist::class)->holds(static::agent(), $request);
     }
 
     /** Whether this agent may see and act on the request, as the core's agent routes ask it. */
@@ -169,7 +168,7 @@ class PanelAssist
         $held = request()->attributes->get($key);
 
         if (! $held instanceof Collection) {
-            $held = AssistRequest::query()->pending()->where('agent_id', (string) $agent->getAuthIdentifier())->whereNotNull('replay_session_id')->get()->keyBy('replay_session_id');
+            $held = app(Assist::class)->whereHolder(AssistRequest::query()->pending(), $agent)->whereNotNull('replay_session_id')->get()->keyBy('replay_session_id');
             request()->attributes->set($key, $held);
         }
 
@@ -237,7 +236,7 @@ class PanelAssist
                 'routes' => $routes,
                 'iceTransportPolicy' => $routes === null ? 'all' : app(Calls::class)->rtcConfiguration()['iceTransportPolicy'],
                 'reconnectTimeout' => (int) config('packstub-calls.reconnect_timeout', 15) * 1000,
-                'pollMs' => 1000,
+                'pollMs' => $assist->callsPollMs(),
             ],
             'video' => $assist->videoAllowed(),
             'csrf' => csrf_token(),
