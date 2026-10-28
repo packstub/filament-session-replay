@@ -2,7 +2,7 @@
 
 A visitor asks for help from the page they are on, and someone from support takes the request in the panel. Or support sees a live recording and offers help. With [Calls for Laravel](https://github.com/packstub/calls) installed, the two meet on a **live view**: the visitor's page mirrored as it happens, with remote control, drawing, audio, video and screen share, each asked for. Without it, help requests are a queue your team answers through its own channels.
 
-The requests, the routes, the visitor's side and the rules all live in the core, [Session Replay for Laravel](https://github.com/packstub/session-replay/blob/main/docs/assist.md): read its Assist guide for what the visitor sees, the timeouts, the events, privacy and configuration. This page covers the panel.
+The requests, the routes, the visitor's side and the rules all live in the core, [Session Replay for Laravel](https://github.com/packstub/session-replay/blob/main/docs/assist.md) (Assist needs version 1.1 or later, which this plugin requires): read its Assist guide for what the visitor sees, the timeouts, the events, privacy and configuration. This page covers the panel.
 
 ## Turning it on
 
@@ -16,13 +16,7 @@ Run `php artisan migrate` for the core's `replay_assist_requests` table. Assist 
 SessionReplayPlugin::make()->assist(false);
 ```
 
-For the live view, install Calls (both are suggested, not required):
-
-```bash
-composer require packstub/calls packstub/filament-calls
-```
-
-and register [Filament Calls](https://github.com/packstub/filament-calls) on the same panel. The live view then talks over the panel's own Calls routes, as the panel's user. Without Filament Calls on the panel, register `Calls::routes()` in `routes/web.php` as the core's guide says, and make `packstub-calls.guard` the panel's guard.
+For the live view, add [Calls for Laravel](https://github.com/packstub/calls) (`packstub/calls`) and [Filament Calls](https://github.com/packstub/filament-calls) (`packstub/filament-calls`). Both are suggested, not required, and released on their own schedule, so follow their READMEs to install them. Then register Filament Calls on the same panel. The live view then talks over the panel's own Calls routes, as the panel's user. Without Filament Calls on the panel, register `Calls::routes()` in `routes/web.php` as the core's guide says, and make `packstub-calls.guard` the panel's guard.
 
 When the panel signs people in with a guard of its own (`->authGuard('admin')`), set `session-replay.viewer.guard` to it, as for the player: the live view asks the core's agent routes for the request's status, and those run the viewer's middleware and gate.
 
@@ -83,7 +77,13 @@ The live view runs its own Calls client (calls of kind `assist`), so the Filamen
 
 ### A page of its own
 
-The live view is a page of its own, always loaded in full: Claim, Offer help and Open live view go to it with a page load, never with `wire:navigate`. It is **not** kept across navigation. Leaving it (a link in the sidebar, the back button, closing the tab) leaves the call: the visitor's side keeps waiting, the request stays yours, and **Open live view** on Help requests picks it up again with a fresh picture of their page. To keep working in the panel during an assist, open the panel in another tab.
+The live view is a page of its own, always loaded in full: Claim, Offer help and Open live view go to it with a page load, never with `wire:navigate`. It is **not** kept across navigation. Leaving it (a link in the sidebar, the back button, closing the tab) leaves the call, and the request stays yours:
+
+- Back through **Open live view** within Calls' `reconnect_timeout` (15 s): the same call, with a fresh picture of their page.
+- Away longer: Calls lets go of your side, but the request waits for you. The visitor's page says you stepped away and are reconnecting, and when you open the live view again a new call starts on its own, live again.
+- Not back within `assist.claim_timeout_seconds` (30) after that: the request goes back to the list, waiting, for anyone to claim.
+
+To keep working in the panel during an assist, open the panel in another tab.
 
 Why not `@persist`: Livewire moves a persisted element into the next page, and a frame moved in the page reloads its document, which would blank the mirror; the replayer, the call and the overlay also need the room the page gives them. A page of its own keeps one simple rule: the live view is where the stage is.
 
