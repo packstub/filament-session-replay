@@ -12,6 +12,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Number;
+use Packstub\SessionReplay\Filament\Assist\AssistActions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\ReplayAsset;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -52,6 +53,8 @@ class ViewReplaySession extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            AssistActions::offer(),
+            AssistActions::openStageForSession(),
             ReplaySessionResource::pinAction(),
             Action::make('export')
                 ->label(__('Export'))

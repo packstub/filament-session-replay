@@ -6,6 +6,8 @@ use Filament\Forms\Components\Field;
 use Filament\Infolists\Components\Entry;
 use Filament\Schemas\Components\Component;
 use Filament\Tables\Columns\Column;
+use Livewire\Livewire;
+use Packstub\SessionReplay\Filament\Livewire\AssistNotifier;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -27,6 +29,8 @@ class FilamentSessionReplayServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->loadJsonTranslationsFrom(__DIR__.'/../../resources/lang');
+
+        Livewire::component('filament-session-replay.assist-notifier', AssistNotifier::class);
 
         $this->registerMaskingMacros();
     }

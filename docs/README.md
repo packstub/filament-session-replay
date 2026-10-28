@@ -11,6 +11,7 @@ Session replay inside a Filament panel: the recordings of [Session Replay for La
 - **[Recording without a directive](installation.md#register-the-plugin)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
 - **[A Sessions resource](watching.md#the-list)**: every recording with its errors, rage clicks and vitals, searchable and filterable.
 - **[The player in the panel](watching.md#the-watch-page)**: markers on the timeline and in a list that seeks on click, with Pin, Export and Delete.
+- **[Help requests and a live view](assist.md)**: visitors ask for help, support claims the request (or offers help on a live recording) and sees the page as it happens, with remote control, drawing, audio and screen share through Calls for Laravel.
 - **[Around your users](people.md)**: a relation manager, a "Watch last session" action and a dashboard widget.
 - **[Masking where the field is](masking.md)**: `->maskInReplay()` and `->blockInReplay()` on fields, columns, entries and sections.
 - **[Workspace-aware](tenancy.md)**: each workspace sees its own recordings, an operator panel sees them all, impersonated sessions are flagged.
@@ -24,6 +25,7 @@ Privacy defaults, consent, storage, pruning, limits and the log context come fro
 | --- | --- |
 | [Installation](installation.md) | Requirements, install, registering the plugin, the gate, the scheduler, the plugin's options, recording in one panel and watching in another |
 | [Watching](watching.md) | The resource's columns and filters, the watch page, Pin, Export and Delete, who may do what, policies and Filament Shield |
+| [Assist](assist.md) | Turning it on, who may help, Help requests and their notifications, Offer help, the live view beside Filament Calls, icons and options |
 | [Masking](masking.md) | `maskInReplay()` and `blockInReplay()` on fields, columns, entries and layout components |
 | [People](people.md) | `HasSessionReplays`, the relation manager, `WatchLastSessionAction`, `ReplayStatsWidget`, naming people |
 | [Tenancy](tenancy.md) | Workspaces, operator panels, database-per-tenant apps, [Account Switcher](https://packstub.dev/docs/filament-account-switcher) and impersonation |
