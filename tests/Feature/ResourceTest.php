@@ -491,14 +491,17 @@ it('keeps what SessionReplay::visibleUsing() hides out of the list, the widget, 
 it('ships every string it shows in German, Spanish, Romanian and Russian', function () {
     $source = '';
 
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../src', FilesystemIterator::SKIP_DOTS)) as $file) {
-        $source .= file_get_contents($file->getPathname());
+    foreach ([__DIR__.'/../../src', __DIR__.'/../../resources/views'] as $directory) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
+            $source .= file_get_contents($file->getPathname());
+        }
     }
 
     preg_match_all("/__\\('((?:[^'\\\\\\\\]|\\\\\\\\.)*)'/", $source, $matches);
 
-    // The three vitals ratings and the three devices reach __() through a variable.
-    $strings = array_unique([...array_map('stripslashes', $matches[1]), 'Good', 'Needs improvement', 'Poor']);
+    // The three vitals ratings and the three devices reach __() through a variable. Keys of the core
+    // (session-replay::viewer.*, the Assist and stage strings) come translated with it.
+    $strings = array_unique([...array_filter(array_map('stripslashes', $matches[1]), fn (string $string): bool => ! str_contains($string, '::')), 'Good', 'Needs improvement', 'Poor']);
 
     foreach (['de', 'es', 'ro', 'ru'] as $locale) {
         $translated = json_decode(file_get_contents(__DIR__."/../../resources/lang/{$locale}.json"), true);
