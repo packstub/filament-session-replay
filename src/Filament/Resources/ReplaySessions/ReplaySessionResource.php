@@ -12,6 +12,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\TextInput;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -29,12 +30,19 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Packstub\SessionReplay\Facades\SessionReplay;
+use Packstub\SessionReplay\Filament\Assist\AssistActions;
+use Packstub\SessionReplay\Filament\Assist\PanelAssist;
+use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistRequests;
+use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistStage;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ListReplaySessions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ViewReplaySession;
+use Packstub\SessionReplay\Filament\View\SessionReplayIconAlias;
 use Packstub\SessionReplay\Models\ReplayMarker;
 use Packstub\SessionReplay\Models\ReplaySession;
 use Packstub\SessionReplay\SessionReplayPlugin;
 use UnitEnum;
+
+use function Filament\Support\original_request;
 
 /**
  * The recordings. Who may open them is the app's viewSessionReplay gate, the
@@ -92,6 +100,42 @@ class ReplaySessionResource extends Resource
     public static function getNavigationSort(): ?int
     {
         return SessionReplayPlugin::get()->getNavigationSort();
+    }
+
+    /**
+     * The recordings, and Help requests below them while Assist is on, with the number of visitors waiting as the
+     * badge. The requests are the core's queue for this agent, so the badge counts only what they may take.
+     *
+     * @return array<NavigationItem>
+     */
+    public static function getNavigationItems(): array
+    {
+        $items = parent::getNavigationItems();
+
+        if (! PanelAssist::mayAssist()) {
+            return $items;
+        }
+
+        $assistRoutes = [static::getRouteBaseName().'.requests', static::getRouteBaseName().'.stage'];
+
+        foreach ($items as $item) {
+            $item->isActiveWhen(fn (): bool => original_request()->routeIs(static::getRouteBaseName().'.*') && ! original_request()->routeIs(...$assistRoutes));
+        }
+
+        $waiting = PanelAssist::waitingCount();
+
+        $items[] = NavigationItem::make(__('session-replay::viewer.assist.nav'))
+            ->group(static::getNavigationGroup())
+            ->parentItem(static::getNavigationParentItem())
+            ->icon(AssistActions::icon(SessionReplayIconAlias::ASSIST_NAVIGATION, Heroicon::OutlinedLifebuoy))
+            ->key(static::class.'.assist')
+            ->isActiveWhen(fn (): bool => original_request()->routeIs(...$assistRoutes))
+            ->sort(static::getNavigationSort())
+            ->badge($waiting > 0 ? (string) $waiting : null, 'warning')
+            ->badgeTooltip(__('Visitors waiting for help'))
+            ->url(static::getUrl('requests'));
+
+        return $items;
     }
 
     public static function getModelLabel(): string
@@ -385,7 +429,9 @@ class ReplaySessionResource extends Resource
                     ->dateTimeTooltip()
                     ->sortable()
                     ->badge(fn (ReplaySession $record): bool => $record->isLive())
-                    ->color(fn (ReplaySession $record): ?string => $record->isLive() ? 'success' : null),
+                    ->color(fn (ReplaySession $record): ?string => $record->isLive() ? 'success' : null)
+                    // Live is a window (the last two minutes), not a promise: say when the page was last heard from.
+                    ->description(fn (ReplaySession $record): ?string => $record->isLive() && $record->lastSeenSeconds() !== null ? __('last seen :ago ago', ['ago' => AssistRequests::duration($record->lastSeenSeconds())]) : null),
                 TextColumn::make('duration')
                     ->label(__('Length'))
                     ->state(fn (ReplaySession $record): string => $record->durationForHumans()),
@@ -480,6 +526,8 @@ class ReplaySessionResource extends Resource
                         ->when($data['until'] ?? null, fn (Builder $query, string $date) => $query->whereDate('started_at', '<=', $date))),
             ])
             ->recordActions([
+                AssistActions::offer(),
+                AssistActions::openStageForSession(),
                 ViewAction::make()->label(__('Watch'))->icon(Heroicon::OutlinedPlay),
                 static::pinAction(),
                 DeleteAction::make(),
@@ -531,6 +579,9 @@ class ReplaySessionResource extends Resource
     {
         return [
             'index' => ListReplaySessions::route('/'),
+            // Before {record}, which would take "requests" for a recording id.
+            'requests' => AssistRequests::route('/requests'),
+            'stage' => AssistStage::route('/requests/{assistRequest}/stage'),
             'view' => ViewReplaySession::route('/{record}'),
         ];
     }

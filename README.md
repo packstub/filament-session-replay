@@ -22,6 +22,7 @@ Session replay inside your Filament panel. "The form did nothing when I clicked 
 - **[Recording without a directive](#recording-a-panel)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
 - **[A Sessions resource](#the-sessions-resource)**: every recording with its errors, rage clicks and vitals, searchable and filterable.
 - **[The player in the panel](#watching-a-recording)**: markers on the timeline and in a list that seeks on click, with Pin, Export and Delete.
+- **[Help requests and a live view](#help-requests-and-a-live-view)**: visitors ask for help, support claims the request (or offers help on a live recording) and sees the page as it happens, with remote control, drawing, audio and screen share through [Calls for Laravel](https://github.com/packstub/calls).
 - **[Around your users](#around-your-users)**: a relation manager, a "Watch last session" action and a dashboard widget.
 - **[Masking where the field is](#masking-where-the-field-is)**: `->maskInReplay()` and `->blockInReplay()` on fields, columns, entries and sections.
 - **[Workspace-aware](#workspaces-and-impersonation)**: each workspace sees its own recordings, an operator panel sees them all, impersonated sessions are flagged.
@@ -93,6 +94,14 @@ Newest first, searchable by a person's name, email or key, with the numbers that
 ![The watch page: the facts of the recording, the player paused on an edit modal where Save changes was clicked again and again, and the marker list with failed Livewire requests, the rage click and a TypeError](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/docs/watch.png)
 
 The watch page shows the facts, the player and the markers: page views, failed Livewire requests, uncaught errors, `console.error`, web vitals and rage clicks. A click on a marker seeks to a second before it, and `?t=83` opens a replay at 1:23, which makes a good link for a ticket. **Pin** keeps a recording out of pruning, **Export** downloads it as one JSON file with its stylesheets, **Delete** removes it with its files. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md#the-watch-page)
+
+## Help requests and a live view
+
+```env
+SESSION_REPLAY_ASSIST=true
+```
+
+With the core's Assist on, a visitor asks for help from the page they are on (`SessionReplay.assist.request()` or the core's "Get help" button) and the panel's **Help requests** list shows them, with the number waiting as the navigation badge and a toast for everyone who may take the request. **Claim** takes it; a live recording has **Offer help**. With [`packstub/calls`](https://github.com/packstub/calls) and [Filament Calls](https://github.com/packstub/filament-calls) on the panel, both lead to the **live view**: the visitor's page mirrored as it happens, masked like the recording, with remote control, drawing, audio, video and screen share, each asked for, in the panel's own buttons and colours. Without Calls, help requests are a queue your team answers through its own channels. Who may help is the same gate as who may watch, narrowed with `SessionReplay::canAssistUsing()`. Assist needs Session Replay for Laravel 1.1 (this plugin requires it); Calls for Laravel and Filament Calls are released separately, so see their READMEs for how to install them. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/assist.md)
 
 ## Around your users
 
@@ -175,6 +184,7 @@ The full documentation, both packages' guides in one place, is on [packstub.dev/
 | [Overview](https://github.com/packstub/filament-session-replay/tree/main/docs) | What you get, at a glance |
 | [Installation](https://github.com/packstub/filament-session-replay/blob/main/docs/installation.md) | Install, register, the gate, the plugin's options, languages, recording in one panel and watching in another |
 | [Watching](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md) | The resource, its filters, the watch page, Pin, Export, Delete, who may do what |
+| [Assist](https://github.com/packstub/filament-session-replay/blob/main/docs/assist.md) | Help requests, notifications, Offer help, the live view beside Filament Calls |
 | [Masking](https://github.com/packstub/filament-session-replay/blob/main/docs/masking.md) | `maskInReplay()` and `blockInReplay()` |
 | [People](https://github.com/packstub/filament-session-replay/blob/main/docs/people.md) | The relation manager, "Watch last session", the stats widget, naming and finding people |
 | [Tenancy](https://github.com/packstub/filament-session-replay/blob/main/docs/tenancy.md) | Workspaces, operator panels, database-per-tenant apps, impersonation |
