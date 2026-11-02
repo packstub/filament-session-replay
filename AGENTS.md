@@ -26,7 +26,7 @@ The core comes from Packagist (`^1.0`, `minimum-stability` `stable`). To work on
 
 ## Conventions
 
-- PHP 8.3+, Filament 5. Every change needs a test and a `CHANGELOG.md` line; changelog headings are `## <version> — <date>`, the tag is `v<version>` on `main`.
+- PHP 8.3+, Filament 5. Every change needs a test and a `CHANGELOG.md` line; changelog headings are `## <version> — <date>`, the tag is `v<version>` on `main`. The section becomes the GitHub release and `release.yml` appends GitHub's list of merged pull requests under it, so keep it short and human: an optional lead sentence, then at most about six one-line bullets saying what a user gets, in plain words (class or method names only when a user needs the name, never lists of them). Always keep breaking changes with an `**Upgrading:**` line, security or privacy fixes, new minimum PHP/Laravel/Filament versions and migrations to run; leave out CI, tests and refactors.
 - Authorization has one source: the core's `viewSessionReplay` gate (`SessionReplay::check()`), unless the app registered a policy for `ReplaySession`, which then decides in the panel. The core's data routes always ask the gate, so nothing here may serve recording content through a route of its own.
 - Recording, storage, privacy defaults and the player belong to the core. If a change needs the chunk format, the manifest or the recorder, make it there and require the new core minor here.
 - Strings are `__()` keyed by the English text.
