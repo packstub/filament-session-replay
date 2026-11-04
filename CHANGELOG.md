@@ -2,6 +2,12 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
+## Unreleased
+
+### Changed
+
+- **Docs.** Installation says what a Content Security Policy needs: the recorder's tags carry `Vite::cspNonce()` like Livewire's, and the watch page needs `'unsafe-inline'` in `style-src`, as a panel's own layout already does.
+
 ## 1.1.0 — 2026-10-28
 
 - A **Person** filter on the Sessions list, and `ReplaySessionResource::getUrlForPerson()` to link to one person's recordings
