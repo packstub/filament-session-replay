@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
@@ -191,6 +192,22 @@ class ReplaySessionResource extends Resource
     }
 
     /**
+     * Which of the configured search columns the people's table has, asked of the schema once per table and
+     * process (not on every keystroke: hasColumn() is a query against the schema).
+     *
+     * @param  array<int, string>  $columns
+     * @return array<int, string>
+     */
+    protected static function knownPeopleColumns(Model $person, array $columns): array
+    {
+        static $known = [];
+
+        $key = $person->getConnectionName().'|'.$person->getTable().'|'.implode(',', $columns);
+
+        return $known[$key] ??= array_values(array_filter($columns, fn (string $column): bool => $person->getConnection()->getSchemaBuilder()->hasColumn($person->getTable(), $column)));
+    }
+
+    /**
      * The person's key, or what the search box holds found in the recorded
      * people's own tables. No join: the index may live on another connection
      * than the people, and a recording names its person by morph type and key.
@@ -217,7 +234,7 @@ class ReplaySessionResource extends Resource
                 }
 
                 $person = new $class;
-                $known = array_values(array_filter($columns, fn (string $column): bool => $person->getConnection()->getSchemaBuilder()->hasColumn($person->getTable(), $column)));
+                $known = static::knownPeopleColumns($person, $columns);
 
                 if ($known === []) {
                     continue;
@@ -476,8 +493,9 @@ class ReplaySessionResource extends Resource
                 Filter::make('started')
                     ->schema([DatePicker::make('from')->label(__('From')), DatePicker::make('until')->label(__('Until'))])
                     ->query(fn (Builder $query, array $data) => $query
-                        ->when($data['from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('started_at', '>=', $date))
-                        ->when($data['until'] ?? null, fn (Builder $query, string $date) => $query->whereDate('started_at', '<=', $date))),
+                        // Bounds on the column itself, not whereDate(): a function around started_at would leave its index unused.
+                        ->when($data['from'] ?? null, fn (Builder $query, string $date) => $query->where('started_at', '>=', Carbon::parse($date)->startOfDay()))
+                        ->when($data['until'] ?? null, fn (Builder $query, string $date) => $query->where('started_at', '<=', Carbon::parse($date)->endOfDay()))),
             ])
             ->recordActions([
                 ViewAction::make()->label(__('Watch'))->icon(Heroicon::OutlinedPlay),

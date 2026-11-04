@@ -2,6 +2,14 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
+## Unreleased
+
+Faster lists on a large table, and a lab that measures what recording costs in memory.
+
+- The Started filter bounds `started_at` itself, so a date range uses the index instead of scanning the table.
+- The person search no longer asks the schema on every keystroke.
+- `workbench/lab/memory.mjs` samples the JS heap, the DOM nodes kept alive and the renderer's RSS over a day's panel work, with the recorder on and off; it found the `wire:navigate` leak the core fixes in its next release. See [What recording a panel costs](docs/installation.md#what-recording-a-panel-costs).
+
 ## 1.1.0 — 2026-10-28
 
 ### Added

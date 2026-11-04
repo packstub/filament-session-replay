@@ -44,7 +44,9 @@ class OrderResource extends Resource
     {
         return $table
             ->poll(request()->boolean('poll') || str_contains((string) request()->header('Referer'), 'poll=1') ? '2s' : null)
-            ->defaultPaginationPageOption(50)
+            // LAB_ROWS_PER_PAGE=500 composer serve: a page of that many rows, for the memory lab.
+            ->paginationPageOptions([10, 25, 50, 100, 250, 500, 1000])
+            ->defaultPaginationPageOption((int) env('LAB_ROWS_PER_PAGE', 50))
             ->columns([
                 TextColumn::make('reference')->searchable()->sortable(),
                 TextColumn::make('customer')->searchable()->sortable(),

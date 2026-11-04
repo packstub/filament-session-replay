@@ -13,14 +13,18 @@ class Order extends Model
 
     public static function seedLab(int $rows = 200): void
     {
-        if (static::query()->exists()) {
+        // LAB_ROWS=2000 composer serve: a longer table, for the memory lab's big pages (topped up, never cut).
+        $rows = max($rows, (int) env('LAB_ROWS', 0));
+        $have = static::query()->count();
+
+        if ($have >= $rows) {
             return;
         }
 
         $names = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Edsger Dijkstra', 'Barbara Liskov', 'Donald Knuth', 'Margaret Hamilton', 'Linus Torvalds'];
         $statuses = ['new', 'paid', 'packed', 'shipped', 'refunded'];
 
-        foreach (range(1, $rows) as $i) {
+        foreach (range($have + 1, $rows) as $i) {
             static::query()->create([
                 'reference' => 'ORD-'.str_pad((string) $i, 5, '0', STR_PAD_LEFT),
                 'customer' => $names[$i % count($names)],
