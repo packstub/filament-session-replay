@@ -500,7 +500,7 @@ class ReplaySessionResource extends Resource
             ->recordActions([
                 ViewAction::make()->label(__('Watch'))->icon(Heroicon::OutlinedPlay),
                 static::pinAction(),
-                DeleteAction::make(),
+                static::deleteAction(),
             ])
             ->toolbarActions([
                 // Each selected recording is asked again: being allowed to delete some is not being allowed to delete these.
@@ -535,6 +535,12 @@ class ReplaySessionResource extends Resource
      *
      * @internal The row and watch-page action.
      */
+    /** The core cancels the delete when the recording's files could not be removed; the operator hears about it. */
+    public static function deleteAction(): DeleteAction
+    {
+        return DeleteAction::make()->failureNotificationTitle(__('The files of this recording could not be removed from the disk; it was kept.'));
+    }
+
     public static function pinAction(): Action
     {
         return Action::make('pin')

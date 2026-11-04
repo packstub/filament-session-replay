@@ -3,7 +3,6 @@
 namespace Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages;
 
 use Filament\Actions\Action;
-use Filament\Actions\DeleteAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\Section;
@@ -60,7 +59,7 @@ class ViewReplaySession extends ViewRecord
                 // The export carries the recording's content: whoever may watch it may take it along.
                 ->authorize(fn (ReplaySession $record): bool => ReplaySessionResource::canView($record))
                 ->action(fn (ReplaySession $record): StreamedResponse => $this->export($record)),
-            DeleteAction::make(),
+            ReplaySessionResource::deleteAction(),
         ];
     }
 

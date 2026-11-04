@@ -44,5 +44,6 @@
     "session replay": "Session Replay",
     "session replays": "Session Replays",
     "Person ID": "Personen-ID",
-    "Person: :who": "Person: :who"
+    "Person: :who": "Person: :who",
+    "The files of this recording could not be removed from the disk; it was kept.": "Die Dateien dieser Aufzeichnung konnten nicht von der Festplatte entfernt werden; sie wurde behalten."
 }

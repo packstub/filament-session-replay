@@ -44,5 +44,6 @@
     "session replay": "запись сессии",
     "session replays": "записи сессий",
     "Person ID": "ID человека",
-    "Person: :who": "Человек: :who"
+    "Person: :who": "Человек: :who",
+    "The files of this recording could not be removed from the disk; it was kept.": "Файлы этой записи не удалось удалить с диска; она сохранена."
 }

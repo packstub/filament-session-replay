@@ -10,20 +10,9 @@ A security release with Session Replay 1.1.0, which it now requires (`packstub/s
 
 - The Started filter bounds `started_at` itself, so a date range uses the index instead of scanning the table
 - The person search no longer asks the schema on every keystroke
+- Delete says so when a recording's files could not be removed from the disk (the core keeps the row for the next prune)
 - `workbench/lab/memory.mjs` measures what recording a panel costs in memory over a day's work; it found the `wire:navigate` leak Session Replay 1.1.0 fixes. See [What recording a panel costs](docs/installation.md#what-recording-a-panel-costs)
 - **Docs:** Installation says what a Content Security Policy needs on the recorded pages and on the watch page
-
-## 1.1.0 — 2026-10-28
-
-### Added
-
-- **Person filter and a deep link to one person's recordings.** The Sessions list gets a **Person** filter (`person`: the person's key, and their morph type in a hidden field), with an indicator that names the person the way the list does (`userLabelUsing()` included), recording or not. `ReplaySessionResource::getUrlForPerson($user, ?$panel, ?$tenant)` is the URL of the list with that filter on, for your own pages and for [Account Switcher](https://packstub.dev/docs/filament-account-switcher)'s impersonation banner, whose **Session replays** button (Account Switcher 4.4) lands on it. See [Watching](docs/watching.md#filters) and [People](docs/people.md#one-persons-recordings).
-=======
->>>>>>> origin/main
-
-### Changed
-
-- **Docs.** Installation says what a Content Security Policy needs: the recorder's tags carry `Vite::cspNonce()` like Livewire's, and the watch page needs `'unsafe-inline'` in `style-src`, as a panel's own layout already does.
 
 ## 1.1.0 — 2026-10-28
 
