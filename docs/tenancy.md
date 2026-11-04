@@ -85,7 +85,7 @@ The usual split is described in [Installation](installation.md#record-in-one-pan
 
 ## Database-per-tenant apps
 
-When every workspace has its own database, keep the four replay tables and the recording disk **central**: operators see every workspace in one list, the ingest endpoint needs no tenant context, and no tenant database grows with recordings.
+When every workspace has its own database, keep the replay tables and the recording disk **central**: operators see every workspace in one list, the ingest endpoint needs no tenant context, and no tenant database grows with recordings.
 
 ```dotenv
 SESSION_REPLAY_DB_CONNECTION=central

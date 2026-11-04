@@ -2,14 +2,16 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
-## Unreleased
-<<<<<<< HEAD
+## 1.1.1 — 2026-11-04
 
-Faster lists on a large table, and a lab that measures what recording costs in memory.
+A security release with Session Replay 1.1.0, which it now requires (`packstub/session-replay: ^1.1`), and faster lists on a large table.
 
-- The Started filter bounds `started_at` itself, so a date range uses the index instead of scanning the table.
-- The person search no longer asks the schema on every keystroke.
-- `workbench/lab/memory.mjs` samples the JS heap, the DOM nodes kept alive and the renderer's RSS over a day's panel work, with the recorder on and off; it found the `wire:navigate` leak the core fixes in its next release. See [What recording a panel costs](docs/installation.md#what-recording-a-panel-costs).
+**Security:** a recording that pointed at no stylesheet (from before Session Replay 1.0.0-beta.5, or one whose CSS stayed inline) had every stylesheet its events named copied into the export, by hash, whichever workspace stored it. The export now carries only the stylesheets the recording points at, as the core's stylesheet route serves them; such recordings export without them.
+
+- The Started filter bounds `started_at` itself, so a date range uses the index instead of scanning the table
+- The person search no longer asks the schema on every keystroke
+- `workbench/lab/memory.mjs` measures what recording a panel costs in memory over a day's work; it found the `wire:navigate` leak Session Replay 1.1.0 fixes. See [What recording a panel costs](docs/installation.md#what-recording-a-panel-costs)
+- **Docs:** Installation says what a Content Security Policy needs on the recorded pages and on the watch page
 
 ## 1.1.0 — 2026-10-28
 
