@@ -110,6 +110,8 @@ SESSION_REPLAY_DISK=replays
 
 The core's [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md#the-disk) page has the disk configuration; keep it private, every file is read through the gated routes.
 
+A **Content Security Policy** that a Filament panel runs under fits the plugin. The recorder's two tags carry `Vite::cspNonce()` the way Livewire's own do, the recorder is served from your origin and uploads to it, and it starts no worker. The watch page rebuilds the recorded page from the inline styles rrweb recorded, which need `'unsafe-inline'` in the panel's `style-src`; a panel's layout carries inline `<style>` blocks of its own, so a policy the panel already works under allows it. The core's [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md#content-security-policy) and [Watching](https://github.com/packstub/session-replay/blob/main/docs/watching.md#content-security-policy) pages say what each side needs.
+
 ## Plugin options
 
 ```php
