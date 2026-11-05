@@ -181,6 +181,8 @@ The full documentation, both packages' guides in one place, is on [packstub.dev/
 
 The core's guides cover the rest: [Recording](https://github.com/packstub/session-replay/blob/main/docs/recording.md), [Privacy](https://github.com/packstub/session-replay/blob/main/docs/privacy.md), [Watching replays](https://github.com/packstub/session-replay/blob/main/docs/watching.md), [Storage](https://github.com/packstub/session-replay/blob/main/docs/storage.md), [Error tracking](https://github.com/packstub/session-replay/blob/main/docs/error-tracking.md), [Configuration](https://github.com/packstub/session-replay/blob/main/docs/configuration.md).
 
+Guide: [Session replay in Laravel and Filament, on your own server](https://packstub.dev/guides/laravel-session-replay-self-hosted), a walkthrough from the first recording to watching it behind your own gate, with measured storage sizes.
+
 ## Testing
 
 ```bash
