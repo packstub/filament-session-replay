@@ -51,6 +51,21 @@ it('passes the recording to the gate for the watch page', function () {
     $this->get(ReplaySessionResource::getUrl('view', ['record' => $colleagues]))->assertForbidden();
 });
 
+it('answers Filament\'s authorization responses the way the gate does, so the watch page follows it on every Filament 5', function () {
+    Gate::define('viewSessionReplay', fn ($user, ?ReplaySession $session = null) => $user->is_staff && ! $session?->user?->is_staff);
+
+    $customers = $this->recording($this->user());
+    $colleagues = $this->recording($this->user(['is_staff' => true]));
+
+    $this->actingAs($this->user(['is_staff' => true]));
+
+    expect(ReplaySessionResource::getViewAuthorizationResponse($customers)->allowed())->toBeTrue()
+        ->and(ReplaySessionResource::getViewAuthorizationResponse($colleagues)->allowed())->toBeFalse()
+        ->and(ReplaySessionResource::getViewAnyAuthorizationResponse()->allowed())->toBeTrue()
+        ->and(ReplaySessionResource::getEditAuthorizationResponse($customers)->allowed())->toBeFalse()
+        ->and(ReplaySessionResource::getCreateAuthorizationResponse()->allowed())->toBeFalse();
+});
+
 it('lets a registered policy decide without a gate, which is how Shield plugs in, and the gate decide over it', function () {
     Gate::policy(ReplaySession::class, ReplaySessionPolicy::class);
 
