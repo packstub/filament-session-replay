@@ -73,7 +73,9 @@ The live view is the core's stage (`stage.js` and `stage.css` from its script ro
 - **Withdraw** and **End assist**.
 - A disabled tool says why under it; what the visitor answered, refused or took back is listed under **What happened**.
 
-The live view runs its own Calls client (calls of kind `assist`), so the Filament Calls widget on the same page, which only looks at calls of kind `call`, never takes the assist call, and keeps working for regular calls. An agent helps one visitor at a time: starting a regular call from the widget ends the assist, and the live view says so.
+The live view runs its own Calls client (calls of kind `assist`), so the Filament Calls widget on the same page, which only looks at calls of kind `call`, never takes the assist call, and keeps working for regular calls. An agent is on one call at a time, whatever its kind: starting a regular call from the widget ends the assist, and the live view says so; the other way round, claiming a request leaves a widget call the agent is on once the visitor's page picks the claim up, and a colleague who rings an agent during an assist hears they are busy.
+
+The visitor's page is outside the panel, so it takes its ICE servers from Calls' config (`CALLS_TURN_*`), not from `FilamentCallsPlugin::make()->iceServers()`. When the panel uses a TURN server, put it in the config too, or visitors behind a strict NAT cannot connect.
 
 ### A page of its own
 
