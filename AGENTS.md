@@ -11,7 +11,7 @@ composer lint               # Pint
 composer serve              # Testbench workbench: a recorded panel on :8000/admin, signed in, recordings under Support
 ```
 
-The core comes from Packagist (`^1.1`, `minimum-stability` `stable`). To work on both packages at once, add a path repository to `../session-replay` locally and leave it out of the commit.
+The core comes from Packagist (`^1.2`, `minimum-stability` `stable`). To work on both packages at once, add a path repository to `../session-replay` locally and leave it out of the commit.
 
 ### Local setup for Assist (core, Calls and Filament Calls from the sibling checkouts)
 
@@ -23,11 +23,11 @@ The core comes from Packagist (`^1.1`, `minimum-stability` `stable`). To work on
     {"type": "path", "url": "../calls", "options": {"symlink": true}},
     {"type": "path", "url": "../filament-calls", "options": {"symlink": true}}
 ],
-"require": {"packstub/session-replay": "dev-main as 1.1.0"},
+"require": {"packstub/session-replay": "dev-main as 1.2.0"},
 "require-dev": {"packstub/calls": "dev-main as 1.0.0", "packstub/filament-calls": "dev-main as 1.0.0"}
 ```
 
-(From a worktree under `.worktrees/<name>`, the paths are `../../../<repo>`; point `session-replay` at the core's branch, e.g. `../../../session-replay/.worktrees/assist` with `dev-assist as 1.1.0`.) `composer.local.json` and `composer.local.lock` are in `.git/info/exclude`. `vendor/packstub/*` are then symlinks, and testbench discovers the Calls providers. The browser lab's `node_modules` is a symlink to the main checkout's `workbench/lab/node_modules`.
+(From a worktree under `.worktrees/<name>`, the paths are `../../../<repo>`; point `session-replay` at the core's branch, e.g. `../../../session-replay/.worktrees/assist-rebased` with `dev-assist-rebased as 1.2.0`.) `composer.local.json` and `composer.local.lock` are in `.git/info/exclude`. `vendor/packstub/*` are then symlinks, and testbench discovers the Calls providers. The browser lab's `node_modules` is a symlink to the main checkout's `workbench/lab/node_modules`.
 
 ## Layout
 

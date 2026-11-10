@@ -2,7 +2,7 @@
 
 A visitor asks for help from the page they are on, and someone from support takes the request in the panel. Or support sees a live recording and offers help. With [Calls for Laravel](https://github.com/packstub/calls) installed, the two meet on a **live view**: the visitor's page mirrored as it happens, with remote control, drawing, audio, video and screen share, each asked for. Without it, help requests are a queue your team answers through its own channels.
 
-The requests, the routes, the visitor's side and the rules all live in the core, [Session Replay for Laravel](https://github.com/packstub/session-replay/blob/main/docs/assist.md) (Assist needs version 1.1 or later, which this plugin requires): read its Assist guide for what the visitor sees, the timeouts, the events, privacy and configuration. This page covers the panel.
+The requests, the routes, the visitor's side and the rules all live in the core, [Session Replay for Laravel](https://github.com/packstub/session-replay/blob/main/docs/assist.md) (Assist needs version 1.2 or later, which this plugin requires): read its Assist guide for what the visitor sees, the timeouts, the events, privacy and configuration. This page covers the panel.
 
 ## Turning it on
 

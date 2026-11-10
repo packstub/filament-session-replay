@@ -10,7 +10,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ### Changed
 
-- **Requires Session Replay 1.1** (`packstub/session-replay: ^1.1`) for Assist: its requests, routes, queue and the stage's host seam (`[data-label]` on a button, the `session-replay:stage` event, leaving the call on `livewire:navigating`). The live view also needs Calls for Laravel and Filament Calls, which are released separately (suggested in `composer.json`).
+- **Requires Session Replay 1.2** (`packstub/session-replay: ^1.2`), the first release with Assist: its requests, routes, queue and the stage's host seam (`[data-label]` on a button, the `session-replay:stage` event, leaving the call on `livewire:navigating`). The live view also needs Calls for Laravel and Filament Calls, which are released separately (suggested in `composer.json`).
 
 ## 1.1.1 — 2026-11-04
 
