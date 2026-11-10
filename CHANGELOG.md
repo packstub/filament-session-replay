@@ -2,6 +2,10 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
+## Unreleased
+
+**Security:** on Filament 5.11 and later, the watch page of a recording the `viewSessionReplay` gate (or the policy) refused still opened for anyone who could see the Sessions list, showing whose recording it was and when; the player's data stayed behind the gate. The page asks the gate again on every Filament 5.
+
 ## 1.1.1 — 2026-11-04
 
 A security release with Session Replay 1.1.0, which it now requires (`packstub/session-replay: ^1.1`), and faster lists on a large table.
