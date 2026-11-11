@@ -37,7 +37,7 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
         ->assertSee('fi-btn-group', false)
         ->assertSee('data-label', false)
         ->assertSee('The checkout button does nothing')
-        // Filament Holler' widget beside it, which polls kind=call only.
+        // Filament Holler's widget beside it, which polls kind=call only.
         ->assertSee('Starting a call from the Holler widget ends this assist.');
 
     $config = stageConfig($response);

@@ -18,7 +18,7 @@ use Packstub\SessionReplay\Models\ReplaySession;
  * The live stage inside the panel: the core's stage script (stage.js and
  * stage.css from its script route, rrweb's Replayer in live mode and its own
  * Holler client, kind=assist) in the panel's layout, with the tools rendered as
- * the panel's own buttons. Beside it, Filament Holler' widget keeps polling
+ * the panel's own buttons. Beside it, Filament Holler's widget keeps polling
  * kind=call and never sees the assist call.
  *
  * A page of its own, not kept across wire:navigate: links to it are full page
