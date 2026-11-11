@@ -7,8 +7,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
-use Packstub\Calls\CallsServiceProvider;
-use Packstub\FilamentCalls\FilamentCallsServiceProvider;
+use Packstub\FilamentHoller\FilamentHollerServiceProvider;
+use Packstub\Holler\HollerServiceProvider;
 use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Models\ReplaySession;
 use Packstub\SessionReplay\Support\Assist;
@@ -18,8 +18,8 @@ use Packstub\SessionReplay\Tests\Fixtures\AssistPanelProvider;
 use Packstub\SessionReplay\Tests\Fixtures\Models\User;
 
 /**
- * Assist on in the core (its routes register at boot), with packstub/calls and
- * packstub/filament-calls booted when they are installed (a dev install links
+ * Assist on in the core (its routes register at boot), with packstub/holler and
+ * packstub/filament-holler booted when they are installed (a dev install links
  * them, see AGENTS.md; they are only suggested by composer.json). Tests that
  * need the live view call needsCalls() and are skipped without them.
  */
@@ -31,8 +31,8 @@ abstract class AssistTestCase extends TestCase
 
         return [
             ...$providers,
-            ...(class_exists(CallsServiceProvider::class) ? [CallsServiceProvider::class] : []),
-            ...(class_exists(FilamentCallsServiceProvider::class) ? [FilamentCallsServiceProvider::class] : []),
+            ...(class_exists(HollerServiceProvider::class) ? [HollerServiceProvider::class] : []),
+            ...(class_exists(FilamentHollerServiceProvider::class) ? [FilamentHollerServiceProvider::class] : []),
             AssistPanelProvider::class,
         ];
     }
@@ -46,12 +46,12 @@ abstract class AssistTestCase extends TestCase
 
     protected function needsCalls(): void
     {
-        if (! class_exists(CallsServiceProvider::class) || ! class_exists(FilamentCallsServiceProvider::class)) {
-            $this->markTestSkipped('packstub/calls and packstub/filament-calls are not installed.');
+        if (! class_exists(HollerServiceProvider::class) || ! class_exists(FilamentHollerServiceProvider::class)) {
+            $this->markTestSkipped('packstub/holler and packstub/filament-holler are not installed.');
         }
     }
 
-    /** The queue alone, as without packstub/calls. */
+    /** The queue alone, as without packstub/holler. */
     protected function withoutCalls(): void
     {
         config()->set('session-replay.assist.calls', false);

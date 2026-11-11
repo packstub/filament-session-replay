@@ -56,7 +56,7 @@ class AssistRequests extends Page implements HasTable
     {
         return PanelAssist::hasLiveView()
             ? __('Claim a request to see the visitor’s page live and talk to them.')
-            : __('Without packstub/calls there is no live view: claim a request and reach the person through your own channels.');
+            : __('Without packstub/holler there is no live view: claim a request and reach the person through your own channels.');
     }
 
     protected function getHeaderActions(): array

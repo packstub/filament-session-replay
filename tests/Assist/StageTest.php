@@ -18,7 +18,7 @@ beforeEach(function () {
     $this->staffGate();
 });
 
-it('hosts the core\'s stage in the panel, with what its script needs and the panel\'s own Calls routes', function () {
+it('hosts the core\'s stage in the panel, with what its script needs and the panel\'s own Holler routes', function () {
     $this->needsCalls();
 
     $request = $this->claimedBy($agent = $this->staff());
@@ -37,8 +37,8 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
         ->assertSee('fi-btn-group', false)
         ->assertSee('data-label', false)
         ->assertSee('The checkout button does nothing')
-        // Filament Calls' widget beside it, which polls kind=call only.
-        ->assertSee('Starting a call from the Calls widget ends this assist.');
+        // Filament Holler' widget beside it, which polls kind=call only.
+        ->assertSee('Starting a call from the Holler widget ends this assist.');
 
     $config = stageConfig($response);
 
@@ -51,14 +51,14 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
             'list' => ReplaySessionResource::getUrl('requests'),
         ])
         ->and($config['calls']['available'])->toBeTrue()
-        ->and($config['calls']['routes']['poll'])->toBe(route('filament.admin.filament-calls.poll'))
-        ->and($config['calls']['routes']['signal'])->toBe(route('filament.admin.filament-calls.signal', ['call' => '__ID__']))
+        ->and($config['calls']['routes']['poll'])->toBe(route('filament.admin.filament-holler.poll'))
+        ->and($config['calls']['routes']['signal'])->toBe(route('filament.admin.filament-holler.signal', ['call' => '__ID__']))
         ->and($config['labels']['buttons']['control'])->toBe('Request control')
         ->and($config['calls']['pollMs'])->toBe(1000)
         ->and($config['csrf'])->toBeString();
 
-    // As often as Calls says.
-    config()->set('packstub-calls.poll.active', 2500);
+    // As often as Holler says.
+    config()->set('holler.poll.active', 2500);
 
     expect(stageConfig($this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id])))['calls']['pollMs'])->toBe(2500);
 });
@@ -98,7 +98,7 @@ it('sends the agent back to the requests from the stage of a request that is ove
         ->assertRedirect(ReplaySessionResource::getUrl('requests'));
 });
 
-it('says there is no live view when Calls is off, instead of a stage that never connects', function () {
+it('says there is no live view when Holler is off, instead of a stage that never connects', function () {
     $this->needsCalls();
 
     $request = $this->claimedBy($this->staff());

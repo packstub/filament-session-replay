@@ -40,7 +40,7 @@ class AssistActions
             ->action(fn (AssistRequest $record, Component $livewire) => static::claimRequest($record, $livewire));
     }
 
-    /** Claim, then the stage (with Calls) or a note that the app answers the request its own way (without). */
+    /** Claim, then the stage (with Holler) or a note that the app answers the request its own way (without). */
     public static function claimRequest(AssistRequest $request, Component $livewire): void
     {
         $agent = PanelAssist::agent();

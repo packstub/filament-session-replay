@@ -59,7 +59,7 @@
     "last seen :ago ago": "zuletzt gesehen vor :ago",
     "Live now": "Jetzt live",
     "Claim a request to see the visitor’s page live and talk to them.": "Übernehmen Sie eine Anfrage, um die Seite des Besuchers live zu sehen und mit ihm zu sprechen.",
-    "Without packstub/calls there is no live view: claim a request and reach the person through your own channels.": "Ohne packstub/calls gibt es keine Live-Ansicht: Übernehmen Sie eine Anfrage und erreichen Sie die Person über Ihre eigenen Kanäle.",
+    "Without packstub/holler there is no live view: claim a request and reach the person through your own channels.": "Ohne packstub/holler gibt es keine Live-Ansicht: Übernehmen Sie eine Anfrage und erreichen Sie die Person über Ihre eigenen Kanäle.",
     "You offered help": "Sie haben Hilfe angeboten",
     "Still here": "Noch da",
     "The page has not polled yet": "Die Seite hat sich noch nicht gemeldet",
@@ -83,6 +83,6 @@
     "Tab hidden": "Tab verborgen",
     "Over": "Beendet",
     "No live view": "Keine Live-Ansicht",
-    "Starting a call from the Calls widget ends this assist.": "Ein Anruf aus dem Calls-Widget beendet diese Hilfe.",
+    "Starting a call from the Holler widget ends this assist.": "Ein Anruf aus dem Holler-Widget beendet diese Hilfe.",
     "Nothing yet.": "Noch nichts."
 }

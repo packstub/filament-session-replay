@@ -59,7 +59,7 @@
     "last seen :ago ago": "был(а) :ago назад",
     "Live now": "Сейчас онлайн",
     "Claim a request to see the visitor’s page live and talk to them.": "Возьмите запрос, чтобы видеть страницу посетителя вживую и говорить с ним.",
-    "Without packstub/calls there is no live view: claim a request and reach the person through your own channels.": "Без packstub/calls живого просмотра нет: возьмите запрос и свяжитесь с человеком своими каналами.",
+    "Without packstub/holler there is no live view: claim a request and reach the person through your own channels.": "Без packstub/holler живого просмотра нет: возьмите запрос и свяжитесь с человеком своими каналами.",
     "You offered help": "Вы предложили помощь",
     "Still here": "Ещё здесь",
     "The page has not polled yet": "Страница ещё не отозвалась",
@@ -83,6 +83,6 @@
     "Tab hidden": "Вкладка скрыта",
     "Over": "Завершено",
     "No live view": "Нет живого просмотра",
-    "Starting a call from the Calls widget ends this assist.": "Звонок из виджета Calls завершит эту помощь.",
+    "Starting a call from the Holler widget ends this assist.": "Звонок из виджета Holler завершит эту помощь.",
     "Nothing yet.": "Пока ничего."
 }

@@ -9,7 +9,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
-use Packstub\Calls\Calls;
+use Packstub\Holler\Holler;
 use Packstub\SessionReplay\Exceptions\AssistRefused;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistRequests;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistStage;
@@ -57,7 +57,7 @@ class PanelAssist
         return static::enabled() && static::agent() !== null && ReplaySessionResource::canViewAny();
     }
 
-    /** packstub/calls is installed and on: a live stage and offers of help exist. */
+    /** packstub/holler is installed and on: a live stage and offers of help exist. */
     public static function hasLiveView(): bool
     {
         return app(Assist::class)->callsAvailable();
@@ -208,7 +208,7 @@ class PanelAssist
 
     /**
      * What the core's stage script reads from data-config: the request as the agent sees it, the core's agent
-     * routes, Calls' routes (the panel's own when Filament Calls is on it, else the app's `Calls::routes()` under
+     * routes, Holler's routes (the panel's own when Filament Holler is on it, else the app's `Holler::routes()` under
      * `assist.calls_routes`) and the core's strings, so the stage says the same in a panel as in the built-in viewer.
      *
      * @return array<string, mixed>
@@ -231,8 +231,8 @@ class PanelAssist
             'calls' => [
                 'available' => $calls,
                 'routes' => $routes,
-                'iceTransportPolicy' => $routes === null ? 'all' : app(Calls::class)->rtcConfiguration()['iceTransportPolicy'],
-                'reconnectTimeout' => (int) config('packstub-calls.reconnect_timeout', 15) * 1000,
+                'iceTransportPolicy' => $routes === null ? 'all' : app(Holler::class)->rtcConfiguration()['iceTransportPolicy'],
+                'reconnectTimeout' => (int) config('holler.reconnect_timeout', 15) * 1000,
                 'pollMs' => $assist->callsPollMs(),
             ],
             'video' => $assist->videoAllowed(),
@@ -241,12 +241,12 @@ class PanelAssist
         ];
     }
 
-    /** Filament Calls is on this panel: its widget polls kind=call beside the stage. */
+    /** Filament Holler is on this panel: its widget polls kind=call beside the stage. */
     public static function panelHasCallsWidget(?Panel $panel = null): bool
     {
         $panel ??= Filament::getCurrentPanel();
 
-        return $panel !== null && $panel->hasPlugin('filament-calls');
+        return $panel !== null && $panel->hasPlugin('filament-holler');
     }
 
     /** @return array<string, string>|null */
@@ -254,10 +254,10 @@ class PanelAssist
     {
         $panel = Filament::getCurrentPanel();
 
-        if ($panel !== null && static::panelHasCallsWidget($panel) && Route::has($panel->generateRouteName('filament-calls.poll'))) {
-            $route = fn (string $name, array $parameters = []): string => $panel->route('filament-calls.'.$name, $parameters);
+        if ($panel !== null && static::panelHasCallsWidget($panel) && Route::has($panel->generateRouteName('filament-holler.poll'))) {
+            $route = fn (string $name, array $parameters = []): string => $panel->route('filament-holler.'.$name, $parameters);
         } else {
-            $prefix = (string) config('session-replay.assist.calls_routes', 'calls.');
+            $prefix = (string) config('session-replay.assist.calls_routes', 'holler.');
 
             if (! Route::has($prefix.'poll') || ! Route::has($prefix.'signal')) {
                 return null;

@@ -1,14 +1,14 @@
 // Assist in a real panel, between two browsers: Ada's page (/admin/orders, recorded) asks for help; Ana Support
 // gets the panel's toast, claims the request on Help requests and lands on the live stage, where the core's stage
-// script mirrors Ada's page over WebRTC (loopback) beside Filament Calls' widget. In a panel that navigates with
+// script mirrors Ada's page over WebRTC (loopback) beside Filament Holler' widget. In a panel that navigates with
 // wire:navigate (LAB_SPA=1, the default here) the stage leaves the call when Ana follows a sidebar link and comes
 // back through Open live view. Ana then ends the assist. Screenshots of the new pages in light and dark mode land
 // in OUT (workbench/lab/out by default). Exits 1 when a check fails.
 //
-//   SESSION_REPLAY_ASSIST=1 composer serve   (once, to build the workbench database with Assist's and Calls' tables; then stop it)
+//   SESSION_REPLAY_ASSIST=1 composer serve   (once, to build the workbench database with Assist's and Holler's tables; then stop it)
 //   cd workbench/lab && npm install && node assist.mjs
 //
-// Needs packstub/calls and packstub/filament-calls linked (AGENTS.md, "Assist"). CHANNEL=chrome runs the installed
+// Needs packstub/holler and packstub/filament-holler linked (AGENTS.md, "Assist"). CHANNEL=chrome runs the installed
 // Chrome instead of Playwright's; PORT=8125 by default; LAB_SPA=0 runs the panel without wire:navigate.
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
@@ -58,7 +58,7 @@ function silentWav() {
 }
 
 async function serve() {
-    // Several PHP workers: the visitor's page, the agent's stage and the Calls widget poll at the same time.
+    // Several PHP workers: the visitor's page, the agent's stage and the Holler widget poll at the same time.
     const server = spawn('php', ['vendor/bin/testbench', 'serve', `--port=${PORT}`], {
         cwd: ROOT,
         env: { ...process.env, SESSION_REPLAY_ASSIST: '1', PHP_CLI_SERVER_WORKERS: '8', LAB_SPA: SPA },
@@ -142,7 +142,7 @@ try {
     visitor.on('pageerror', (error) => errors.push(`visitor: ${error.message}`));
     agent.on('pageerror', (error) => errors.push(`agent: ${error.message}`));
     agent.on('request', (request) => {
-        if (request.url().includes('/filament-calls/calls/poll')) polls.push(new URL(request.url()).searchParams.get('kind'));
+        if (request.url().includes('/filament-holler/calls/poll')) polls.push(new URL(request.url()).searchParams.get('kind'));
     });
 
     // ---- Ada's page records -----------------------------------------------------------------------------
@@ -216,8 +216,8 @@ try {
     expect('the mirror shows Ada\'s Orders page', mirrored?.ok === true);
     expect('the panel\'s badge says Live', (await agent.locator('.fi-badge:visible').allTextContents()).map((text) => text.trim()).includes('Live'));
     expect('Ada\'s page says Ana sees it', await visitor.getByText(/sees this page/).isVisible().catch(() => false));
-    expect('Filament Calls\' widget is on the stage page', (await agent.locator('[data-calls-widget], .fi-calls').count()) > 0);
-    expect('the stage polls Calls with kind=assist, the widget with kind=call', polls.includes('assist') && polls.includes('call') && !polls.includes(null), [...new Set(polls)].join(', '));
+    expect('Filament Holler\' widget is on the stage page', (await agent.locator('[data-holler-widget], .fi-holler').count()) > 0);
+    expect('the stage polls Holler with kind=assist, the widget with kind=call', polls.includes('assist') && polls.includes('call') && !polls.includes(null), [...new Set(polls)].join(', '));
 
     // Draw: the panel's toggle button is pressed and the label stays beside its icon.
     await agent.locator('[data-action="draw"]').click();

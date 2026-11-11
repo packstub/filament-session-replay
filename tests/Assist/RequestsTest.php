@@ -70,7 +70,7 @@ it('follows canAssistUsing(): a request the rule refuses is neither listed, coun
     expect(PanelAssist::allows($request))->toBeFalse();
 });
 
-it('claims a request and goes on to the live stage with Calls, with a full page load', function () {
+it('claims a request and goes on to the live stage with Holler, with a full page load', function () {
     $this->needsCalls();
 
     $request = $this->waiting();
@@ -86,7 +86,7 @@ it('claims a request and goes on to the live stage with Calls, with a full page 
         ->agent_name->toBe('Ana Support');
 });
 
-it('claims into the queue alone without Calls, and says the app answers the request its own way', function () {
+it('claims into the queue alone without Holler, and says the app answers the request its own way', function () {
     $this->withoutCalls();
 
     $request = $this->waiting();
@@ -102,7 +102,7 @@ it('claims into the queue alone without Calls, and says the app answers the requ
 
     expect($request->refresh()->status)->toBe(AssistRequest::CLAIMED);
 
-    $this->get(ReplaySessionResource::getUrl('requests'))->assertSee('Without packstub/calls there is no live view');
+    $this->get(ReplaySessionResource::getUrl('requests'))->assertSee('Without packstub/holler there is no live view');
 });
 
 it('withdraws a claim back into the list and ends a request', function () {
@@ -169,7 +169,7 @@ it('offers help on a live recording from the list and the watch page, then the s
         ->assertActionHidden('openAssistStageForSession');
 });
 
-it('offers no help without Calls, and nothing at all while Assist is off in the panel', function () {
+it('offers no help without Holler, and nothing at all while Assist is off in the panel', function () {
     $live = $this->browser();
     $this->signIn($this->staff());
 

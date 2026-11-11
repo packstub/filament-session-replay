@@ -297,7 +297,7 @@
                     </div>
 
                     @if (PanelAssist::panelHasCallsWidget())
-                        <p class="fsr-stage__muted">{{ __('Starting a call from the Calls widget ends this assist.') }}</p>
+                        <p class="fsr-stage__muted">{{ __('Starting a call from the Holler widget ends this assist.') }}</p>
                     @endif
                 </div>
             </x-filament::section>

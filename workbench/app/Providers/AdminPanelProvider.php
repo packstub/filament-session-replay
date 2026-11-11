@@ -15,7 +15,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Packstub\FilamentCalls\FilamentCallsPlugin;
+use Packstub\FilamentHoller\FilamentHollerPlugin;
 use Packstub\SessionReplay\SessionReplayPlugin;
 use Packstub\SessionReplay\Tests\Fixtures\Filament\Resources\Users\UserResource;
 use Packstub\SessionReplay\Tests\Fixtures\Models\User;
@@ -37,8 +37,8 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             // LAB_IMPERSONATE_ON=admin/orders: pages on that path are signed with an impersonator, for the lab's identity check.
             ->plugin(SessionReplayPlugin::make()->widget()->navigationGroup('Support')->impersonatorUsing(fn () => env('LAB_IMPERSONATE_ON') && request()->is(env('LAB_IMPERSONATE_ON')) ? '7' : null))
-            // Filament Calls beside the Assist stage, when it is linked (see AGENTS.md): its widget polls kind=call.
-            ->plugins(class_exists(FilamentCallsPlugin::class) && env('SESSION_REPLAY_ASSIST') ? [FilamentCallsPlugin::make()] : [])
+            // Filament Holler beside the Assist stage, when it is linked (see AGENTS.md): its widget polls kind=call.
+            ->plugins(class_exists(FilamentHollerPlugin::class) && env('SESSION_REPLAY_ASSIST') ? [FilamentHollerPlugin::make()] : [])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

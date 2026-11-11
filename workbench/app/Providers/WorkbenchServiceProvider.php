@@ -11,7 +11,7 @@ use Packstub\SessionReplay\Tests\Fixtures\Models\User;
 /**
  * `composer serve`: a recorded panel on /admin (signed in as ada@example.com / secret) where recordings are watched too.
  *
- * Assist: `SESSION_REPLAY_ASSIST=1 composer serve` (with packstub/calls and packstub/filament-calls linked, see
+ * Assist: `SESSION_REPLAY_ASSIST=1 composer serve` (with packstub/holler and packstub/filament-holler linked, see
  * AGENTS.md), ask for help from Ada's page (`SessionReplay.assist.request()` in the console), then open /lab/agent
  * in another browser: Ana Support's Help requests, where Claim leads to the live stage. workbench/lab/assist.mjs
  * does it all in two Chromium browsers.

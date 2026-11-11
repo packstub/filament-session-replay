@@ -56,7 +56,7 @@ it('tells an agent about each new request once, with a toast that can claim it',
     expect($request->refresh()->status)->toBe(AssistRequest::CLAIMED);
 });
 
-it('claims from the toast and goes on to the stage with Calls, or says who was faster', function () {
+it('claims from the toast and goes on to the stage with Holler, or says who was faster', function () {
     $this->needsCalls();
 
     $first = $this->waiting();

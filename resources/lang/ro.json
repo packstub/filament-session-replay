@@ -59,7 +59,7 @@
     "last seen :ago ago": "văzut acum :ago",
     "Live now": "Live acum",
     "Claim a request to see the visitor’s page live and talk to them.": "Preia o cerere ca să vezi live pagina vizitatorului și să vorbești cu el.",
-    "Without packstub/calls there is no live view: claim a request and reach the person through your own channels.": "Fără packstub/calls nu există vizualizare live: preia o cerere și contactează persoana prin canalele tale.",
+    "Without packstub/holler there is no live view: claim a request and reach the person through your own channels.": "Fără packstub/holler nu există vizualizare live: preia o cerere și contactează persoana prin canalele tale.",
     "You offered help": "Ai oferit ajutor",
     "Still here": "Încă aici",
     "The page has not polled yet": "Pagina nu a răspuns încă",
@@ -83,6 +83,6 @@
     "Tab hidden": "Filă ascunsă",
     "Over": "Încheiată",
     "No live view": "Fără vizualizare live",
-    "Starting a call from the Calls widget ends this assist.": "Un apel pornit din widgetul Calls încheie această asistență.",
+    "Starting a call from the Holler widget ends this assist.": "Un apel pornit din widgetul Holler încheie această asistență.",
     "Nothing yet.": "Nimic încă."
 }
