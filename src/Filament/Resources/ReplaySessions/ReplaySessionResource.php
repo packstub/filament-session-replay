@@ -21,6 +21,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -339,6 +340,30 @@ class ReplaySessionResource extends Resource
     public static function canView(Model $record): bool
     {
         return $record instanceof ReplaySession && SessionReplay::check($record, Filament::auth()->user());
+    }
+
+    /**
+     * Filament 5.11 authorizes the view page (and create and edit pages) through these responses rather than canView():
+     * they answer what the overrides above answer, so the watch page never opens a recording the gate refuses.
+     */
+    public static function getViewAnyAuthorizationResponse(): Response
+    {
+        return static::canViewAny() ? Response::allow() : Response::deny();
+    }
+
+    public static function getViewAuthorizationResponse(Model $record): Response
+    {
+        return static::canView($record) ? Response::allow() : Response::deny();
+    }
+
+    public static function getCreateAuthorizationResponse(): Response
+    {
+        return Response::deny();
+    }
+
+    public static function getEditAuthorizationResponse(Model $record): Response
+    {
+        return Response::deny();
     }
 
     public static function canCreate(): bool
