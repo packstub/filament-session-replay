@@ -217,7 +217,7 @@
             <x-filament::section compact>
                 <div class="fsr-stage__status" role="status" aria-live="polite">
                     @foreach ($phases as $phase => [$color, $label])
-                        <x-filament::badge :color="$color" x-show="phase === '{{ $phase }}'" x-cloak>{{ $label }}</x-filament::badge>
+                        <x-filament::badge :color="$color" data-phase-badge="{{ $phase }}" x-show="phase === '{{ $phase }}'" x-cloak>{{ $label }}</x-filament::badge>
                     @endforeach
                     <span data-ref="status">{{ __($s.'status.connecting') }}</span>
                     <span class="fsr-stage__seen" data-ref="seen"></span>
@@ -267,12 +267,13 @@
                                 </x-filament::button>
                             </x-filament::button.group>
                             {{-- On by default: the visitor sees where the agent points while they watch. --}}
-                            <x-filament::button size="sm" color="gray" :icon="Heroicon::OutlinedCursorArrowRipple" :icon-alias="Icon::STAGE_POINTER" data-action="pointer" aria-pressed="true">
+                            <x-filament::button size="sm" color="gray" :icon="Heroicon::OutlinedCursorArrowRipple" :icon-alias="Icon::STAGE_POINTER" data-action="pointer" aria-pressed="true" aria-describedby="fsr-why-pointer">
                                 <span data-label>{{ __($s.'buttons.pointer') }}</span>
                             </x-filament::button>
                         </div>
                         <p class="fsr-stage__why" id="fsr-why-control" data-why="control" hidden></p>
                         <p class="fsr-stage__why" id="fsr-why-draw" data-why="draw" hidden></p>
+                        <p class="fsr-stage__why" id="fsr-why-pointer" data-why="pointer" hidden></p>
                     </div>
 
                     <div class="fsr-stage__group">

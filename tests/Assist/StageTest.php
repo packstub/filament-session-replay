@@ -63,29 +63,73 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
     expect(stageConfig($this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id])))['calls']['pollMs'])->toBe(2500);
 });
 
+/** The markup of the stage without its data-config attribute, whose labels JSON repeats every string of the page. */
+function stageMarkup(TestResponse $response): string
+{
+    return preg_replace('/data-config="[^"]*"/', '', $response->getContent());
+}
+
+/** The opening tag and content of the panel button with this data-action. */
+function stageButton(string $markup, string $action): ?string
+{
+    return preg_match('/<button\b[^>]*\bdata-action="'.preg_quote($action, '/').'"[^>]*>.*?<\/button>/s', $markup, $match) === 1 ? $match[0] : null;
+}
+
 it('has the pointer toggle and Put on hold as panel buttons, over the panel\'s own Holler hold and resume routes', function () {
     $this->needsCalls();
 
     $request = $this->claimedBy($this->staff());
 
-    $response = $this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]))
-        ->assertOk()
-        // On by default (the core's script keeps it pressed), with the core's label.
-        ->assertSee('data-action="pointer"', false)
-        ->assertSee('Show my pointer')
-        // Hidden until the script knows the routes are there; the reason it is disabled goes under it.
-        ->assertSee('data-action="hold"', false)
-        ->assertSee('data-why="hold"', false)
-        ->assertSee('Put on hold')
-        // The badge for the stage's `on_hold` phase.
-        ->assertSee('On hold');
+    $response = $this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]))->assertOk();
+    $markup = stageMarkup($response);
 
-    expect(preg_match('/data-action="pointer"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-action="pointer"/', $response->getContent()))->toBe(1);
+    // The strings are looked for in the rendered elements: the config's labels would satisfy a plain assertSee.
+    expect($markup)->not->toContain('data-config=');
+
+    $pointer = stageButton($markup, 'pointer');
+    $hold = stageButton($markup, 'hold');
+
+    // On by default (the core's script keeps it pressed), a panel button with its label beside the icon.
+    expect($pointer)->not->toBeNull()
+        ->toContain('fi-btn')
+        ->toContain('aria-pressed="true"')
+        ->toMatch('/<span data-label>\s*Show my pointer\s*<\/span>/')
+        ->toContain('<svg')
+        // Hidden until the script knows Holler's hold routes are there.
+        ->and($hold)->not->toBeNull()
+        ->toContain('fi-btn')
+        ->toMatch('/\shidden\b/')
+        ->toContain('aria-pressed="false"')
+        ->toMatch('/<span data-label>\s*Put on hold\s*<\/span>/')
+        // Where the script writes why each is disabled.
+        ->and($markup)->toContain('data-why="hold"')
+        ->toContain('data-why="pointer"');
 
     $routes = stageConfig($response)['calls']['routes'];
 
     expect($routes['hold'])->toBe(route('filament.admin.filament-holler.hold', ['call' => '__ID__']))
         ->and($routes['resume'])->toBe(route('filament.admin.filament-holler.resume', ['call' => '__ID__']));
+});
+
+it('has a badge for every phase the core\'s stage reports, On hold among them', function () {
+    $this->needsCalls();
+
+    $request = $this->claimedBy($this->staff());
+    $markup = stageMarkup($this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]))->assertOk());
+
+    preg_match_all('/<[a-z]+\b[^>]*\bdata-phase-badge="([a-z_]+)"[^>]*>(.*?)<\/[a-z]+>/s', $markup, $badges, PREG_SET_ORDER);
+    $labels = collect($badges)->mapWithKeys(fn (array $badge) => [$badge[1] => trim(strip_tags($badge[2]))]);
+
+    // stagePhase() in the core's lib/assist-stage.js.
+    expect($labels->keys()->sort()->values()->all())->toBe(['connecting', 'ended', 'hidden', 'live', 'on_hold', 'reconnecting', 'unavailable', 'waiting'])
+        ->and($labels['on_hold'])->toBe('On hold')
+        ->and($labels['live'])->toBe('Live');
+
+    // Shown only in its phase: the badge carries the Alpine condition the stage's event drives.
+    $onHold = collect($badges)->first(fn (array $badge) => $badge[1] === 'on_hold')[0];
+
+    expect($onHold)->toContain('x-show="phase === \'on_hold\'"')
+        ->toContain('fi-badge');
 });
 
 it('opens the stage to the agent who holds the request only, asking the gate and canAssist again', function () {
