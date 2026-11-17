@@ -2,6 +2,10 @@
 
 All notable changes to `packstub/filament-session-replay` are documented here.
 
+## Unreleased
+
+- `composer.json`'s homepage points at the package's page on packstub.dev
+
 ## 1.1.1 — 2026-11-04
 
 A security release with Session Replay 1.1.0, which it now requires (`packstub/session-replay: ^1.1`), and faster lists on a large table.

@@ -73,7 +73,7 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "homepage": "https://github.com/packstub/filament-session-replay",
+    "homepage": "https://packstub.dev/plugins/filament-session-replay",
     "support": {
         "issues": "https://github.com/packstub/filament-session-replay/issues",
         "source": "https://github.com/packstub/filament-session-replay",
