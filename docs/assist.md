@@ -65,15 +65,26 @@ The recordings list has a **Live now** tab: recordings with an upload or a heart
 
 The live view is the core's stage (`stage.js` and `stage.css` from its script route: rrweb's replayer in live mode and the calls engine) on a page of the panel, with its tools as the panel's own buttons:
 
-- A status badge and line: waiting for the visitor, connecting, live, live with the visitor's tab hidden, reconnecting, over and why.
+- A status badge and line: waiting for the visitor, connecting, live, live with the visitor's tab hidden, on hold, reconnecting, over and why.
 - The visitor's page, replayed as it happens in a sandboxed frame without scripts, masked like the recording.
 - **Page / Ask to see their screen**: the view switch; their screen shows as video once they share it.
 - **Request control / Draw**: remote control (pointer, drags, wheel and arrow keys; a click on a field opens a box to type into it) once the visitor allows it, and strokes that fade on their page.
+- **Show my pointer** (on by default): while you watch, the visitor sees where you point, as your named cursor on their page. Nothing is asked, since it changes nothing there; a click still needs control. Turn it off to look around unseen.
 - **Start audio**, **Start video** (while Holler allows video), **Share my screen**, then Mute and End audio.
+- **Put on hold / Resume**: step out of the call without ending the assist (see below).
 - **Withdraw** and **End assist**.
 - A disabled tool says why under it; what the visitor answered, refused or took back is listed under **What happened**.
 
-The live view runs its own Holler client (calls of kind `assist`), so the Filament Holler widget on the same page, which only looks at calls of kind `call`, never takes the assist call, and keeps working for regular calls. An agent is on one call at a time, whatever its kind: starting a regular call from the widget ends the assist, and the live view says so; the other way round, claiming a request leaves a widget call the agent is on once the visitor's page picks the claim up, and a colleague who rings an agent during an assist hears they are busy.
+The live view runs its own Holler client (calls of kind `assist`), so the Filament Holler widget on the same page, which only looks at calls of kind `call`, never takes the assist call, and keeps working for regular calls. An agent is in one call at a time, whatever its kind: starting a regular call from the widget ends the assist, and the live view says so, unless the assist is on hold; the other way round, claiming a request leaves a widget call the agent is on once the visitor's page picks the claim up, and a colleague who rings an agent during an assist hears they are busy.
+
+### On hold
+
+Holler lets you put a call on hold, and the live view goes along with it:
+
+- **Put on hold** on the live view steps out of the assist without ending it. The badge says On hold, the visitor's page says you put the session on hold and will be right back, and nothing is mirrored or heard meanwhile. Now a call from the Holler widget (to ask a colleague, say) leaves the assist waiting. **Resume** brings you back, from a fresh picture of their page; remote control is asked again, audio allowed before comes back on its own.
+- A call you put on hold in the widget before claiming waits through the assist. Resuming it during the assist is Holler's swap: the assist goes on hold in its place, and Resume on the live view swaps back. Holler keeps one call on hold per person, so Put on hold is refused while a widget call is on hold.
+- The widget never lists the assist, on hold or not; only the live view shows it.
+- A hold lasts while the live view is open. Leave the page with the assist on hold for longer than Holler's `reconnect_timeout` and you have left the live view, as in [A page of its own](#a-page-of-its-own): the request waits for you, then goes back to the list.
 
 The visitor's page is outside the panel, so it takes its ICE servers from Holler's config (`HOLLER_TURN_*`), not from `FilamentHollerPlugin::make()->iceServers()`. When the panel uses a TURN server, put it in the config too, or visitors behind a strict NAT cannot connect.
 
@@ -104,7 +115,7 @@ FilamentIcon::register([
 ]);
 ```
 
-The aliases: `ASSIST_NAVIGATION`, `ASSIST_CLAIM`, `ASSIST_OFFER`, `ASSIST_OPEN_STAGE`, `ASSIST_WITHDRAW`, `ASSIST_END`, `ASSIST_REQUESTED` (the notification), and the live view's `STAGE_MIRROR`, `STAGE_SCREEN`, `STAGE_CONTROL`, `STAGE_DRAW`, `STAGE_AUDIO`, `STAGE_VIDEO`, `STAGE_SHARE`, `STAGE_MUTE`, `STAGE_END_AUDIO`.
+The aliases: `ASSIST_NAVIGATION`, `ASSIST_CLAIM`, `ASSIST_OFFER`, `ASSIST_OPEN_STAGE`, `ASSIST_WITHDRAW`, `ASSIST_END`, `ASSIST_REQUESTED` (the notification), and the live view's `STAGE_MIRROR`, `STAGE_SCREEN`, `STAGE_CONTROL`, `STAGE_DRAW`, `STAGE_POINTER`, `STAGE_HOLD`, `STAGE_AUDIO`, `STAGE_VIDEO`, `STAGE_SHARE`, `STAGE_MUTE`, `STAGE_END_AUDIO`.
 
 ## Plugin options
 

@@ -17,6 +17,7 @@
         'reconnecting' => ['warning', __('Reconnecting')],
         'live' => ['success', __('Live')],
         'hidden' => ['warning', __('Tab hidden')],
+        'on_hold' => ['warning', __('On hold')],
         'ended' => ['gray', __('Over')],
         'unavailable' => ['danger', __('No live view')],
     ];
@@ -265,6 +266,10 @@
                                     <span data-label>{{ __($s.'buttons.draw') }}</span>
                                 </x-filament::button>
                             </x-filament::button.group>
+                            {{-- On by default: the visitor sees where the agent points while they watch. --}}
+                            <x-filament::button size="sm" color="gray" :icon="Heroicon::OutlinedCursorArrowRipple" :icon-alias="Icon::STAGE_POINTER" data-action="pointer" aria-pressed="true">
+                                <span data-label>{{ __($s.'buttons.pointer') }}</span>
+                            </x-filament::button>
                         </div>
                         <p class="fsr-stage__why" id="fsr-why-control" data-why="control" hidden></p>
                         <p class="fsr-stage__why" id="fsr-why-draw" data-why="draw" hidden></p>
@@ -288,6 +293,9 @@
                     </div>
 
                     <div class="fsr-stage__row">
+                        <x-filament::button size="sm" color="gray" :icon="Heroicon::OutlinedPause" :icon-alias="Icon::STAGE_HOLD" data-action="hold" aria-pressed="false" aria-describedby="fsr-why-hold" hidden>
+                            <span data-label>{{ __($s.'buttons.hold') }}</span>
+                        </x-filament::button>
                         <x-filament::button size="sm" color="gray" :icon="Heroicon::OutlinedArrowUturnLeft" :icon-alias="Icon::ASSIST_WITHDRAW" data-action="withdraw" hidden>
                             <span data-label>{{ __($s.'buttons.withdraw') }}</span>
                         </x-filament::button>
@@ -296,8 +304,10 @@
                         </x-filament::button>
                     </div>
 
+                    <p class="fsr-stage__why" id="fsr-why-hold" data-why="hold" hidden></p>
+
                     @if (PanelAssist::panelHasCallsWidget())
-                        <p class="fsr-stage__muted">{{ __('Starting a call from the Holler widget ends this assist.') }}</p>
+                        <p class="fsr-stage__muted">{{ __('Starting a call from the Holler widget ends this assist. Put it on hold first to keep it.') }}</p>
                     @endif
                 </div>
             </x-filament::section>

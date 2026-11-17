@@ -81,8 +81,9 @@
     "Reconnecting": "Se reconectează",
     "Live": "Live",
     "Tab hidden": "Filă ascunsă",
+    "On hold": "În așteptare",
     "Over": "Încheiată",
     "No live view": "Fără vizualizare live",
-    "Starting a call from the Holler widget ends this assist.": "Un apel pornit din widgetul Holler încheie această asistență.",
+    "Starting a call from the Holler widget ends this assist. Put it on hold first to keep it.": "Un apel pornit din widgetul Holler încheie această asistență. Pune-o întâi în așteptare ca să o păstrezi.",
     "Nothing yet.": "Nimic încă."
 }

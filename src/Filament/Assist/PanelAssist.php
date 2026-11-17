@@ -256,6 +256,7 @@ class PanelAssist
 
         if ($panel !== null && static::panelHasCallsWidget($panel) && Route::has($panel->generateRouteName('filament-holler.poll'))) {
             $route = fn (string $name, array $parameters = []): string => $panel->route('filament-holler.'.$name, $parameters);
+            $has = fn (string $name): bool => Route::has($panel->generateRouteName('filament-holler.'.$name));
         } else {
             $prefix = (string) config('session-replay.assist.calls_routes', 'holler.');
 
@@ -264,6 +265,7 @@ class PanelAssist
             }
 
             $route = fn (string $name, array $parameters = []): string => route($prefix.$name, $parameters);
+            $has = fn (string $name): bool => Route::has($prefix.$name);
         }
 
         return [
@@ -275,6 +277,11 @@ class PanelAssist
             'signal' => $route('signal', ['call' => '__ID__']),
             'leave' => $route('leave', ['call' => '__ID__']),
             'ice' => $route('ice'),
+            // Holler's hold: Put on hold and Resume on the live view.
+            ...($has('hold') && $has('resume') ? [
+                'hold' => $route('hold', ['call' => '__ID__']),
+                'resume' => $route('resume', ['call' => '__ID__']),
+            ] : []),
         ];
     }
 }

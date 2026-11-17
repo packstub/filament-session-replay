@@ -33,6 +33,12 @@ class SessionReplayIconAlias
 
     const STAGE_DRAW = 'filament-session-replay::stage.draw';
 
+    /** Show my pointer: the agent's pointer drawn on the visitor's page while they watch. */
+    const STAGE_POINTER = 'filament-session-replay::stage.pointer';
+
+    /** Put on hold / Resume. */
+    const STAGE_HOLD = 'filament-session-replay::stage.hold';
+
     const STAGE_AUDIO = 'filament-session-replay::stage.audio';
 
     const STAGE_VIDEO = 'filament-session-replay::stage.video';

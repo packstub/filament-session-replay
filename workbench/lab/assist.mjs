@@ -1,6 +1,7 @@
 // Assist in a real panel, between two browsers: Ada's page (/admin/orders, recorded) asks for help; Ana Support
 // gets the panel's toast, claims the request on Help requests and lands on the live stage, where the core's stage
-// script mirrors Ada's page over WebRTC (loopback) beside Filament Holler's widget. In a panel that navigates with
+// script mirrors Ada's page over WebRTC (loopback) beside Filament Holler's widget; Ana points at the page (Ada
+// sees her cursor), puts the assist on hold and resumes it. In a panel that navigates with
 // wire:navigate (LAB_SPA=1, the default here) the stage leaves the call when Ana follows a sidebar link and comes
 // back through Open live view. Ana then ends the assist. Screenshots of the new pages in light and dark mode land
 // in OUT (workbench/lab/out by default). Exits 1 when a check fails.
@@ -113,7 +114,7 @@ async function shoot(page, name) {
 mkdirSync(OUT, { recursive: true });
 
 // A clean slate: no requests or calls left from an earlier run.
-sql('delete from replay_assist_requests; delete from call_signals; delete from call_participants; delete from calls; select 1');
+sql('delete from replay_assist_requests; delete from holler_call_signals; delete from holler_call_participants; delete from holler_calls; select 1');
 
 const server = await serve();
 const browser = await chromium.launch({
@@ -225,6 +226,57 @@ try {
     expect('the button keeps its icon', (await agent.locator('[data-action="draw"] svg').count()) === 1);
     await shoot(agent, 'stage');
     await agent.locator('[data-action="draw"]').click();
+
+    // The pointer: Ana only watches, and Ada sees her named cursor where she points; no question, no control frame.
+    const cursorOnVisitor = () =>
+        visitor.evaluate(() => {
+            for (const host of document.querySelectorAll('[data-replay-skip]')) {
+                const cursor = host.shadowRoot?.querySelector('.cursor');
+
+                if (cursor) return { shown: !cursor.hidden, name: cursor.querySelector('span')?.textContent ?? '', frame: !host.shadowRoot.querySelector('.outline').hidden };
+            }
+
+            return null;
+        });
+    const frame = await agent.locator('[data-ref="mirror"] iframe').boundingBox();
+
+    expect('Show my pointer is on by default', (await agent.locator('[data-action="pointer"]').getAttribute('aria-pressed')) === 'true');
+    await agent.mouse.move(frame.x + 60, frame.y + 60);
+    await agent.mouse.move(frame.x + 200, frame.y + 120, { steps: 6 });
+
+    const pointed = await waitFor('Ada sees where Ana points', async () => {
+        const cursor = await cursorOnVisitor();
+
+        return { ok: cursor?.shown === true, ...cursor };
+    }, 10_000);
+
+    expect('Ada sees where Ana points, by name, without the control frame', pointed?.ok === true && pointed.name !== '' && pointed.frame === false, JSON.stringify(pointed));
+    expect('pointing asked Ada nothing and gave no control', (await stageState(agent)).control === 'off' && !(await visitor.getByText(/would like to/).isVisible().catch(() => false)));
+    await agent.mouse.move(2, 2);
+    await waitFor('the pointer goes when Ana\'s leaves the page', async () => ({ ok: (await cursorOnVisitor())?.shown === false }), 10_000);
+
+    // On hold and back, with the panel's button: the request stays live, Ada's page says Ana will be right back.
+    await agent.locator('[data-action="hold"]').click();
+
+    const held = await waitFor('the stage is on hold', async () => {
+        const state = await stageState(agent);
+
+        return { ok: state?.phase === 'on_hold', phase: state?.phase };
+    }, 20_000);
+
+    expect('Put on hold: the panel\'s badge says On hold', held?.ok === true && (await agent.locator('.fi-badge:visible').allTextContents()).map((text) => text.trim()).includes('On hold'));
+    expect('Ada\'s page says Ana will be right back', await visitor.getByText(/put this session on hold/).waitFor({ timeout: 15_000 }).then(() => true, () => false));
+    expect('the request is still active on hold', sql("select status from replay_assist_requests where message = 'The export button does nothing'")[0]?.status === 'active');
+    await shoot(agent, 'stage-on-hold');
+    await agent.locator('[data-action="hold"]').click();
+
+    const resumed = await waitFor('the stage is live again after Resume', async () => {
+        const state = await stageState(agent);
+
+        return { ok: state?.phase === 'live' && state.events > 0, phase: state?.phase };
+    });
+
+    expect('Resume: live again on the same request', resumed?.ok === true);
 
     const [request] = sql("select id, status from replay_assist_requests where message = 'The export button does nothing'");
 

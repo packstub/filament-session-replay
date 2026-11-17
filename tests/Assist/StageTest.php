@@ -38,7 +38,7 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
         ->assertSee('data-label', false)
         ->assertSee('The checkout button does nothing')
         // Filament Holler's widget beside it, which polls kind=call only.
-        ->assertSee('Starting a call from the Holler widget ends this assist.');
+        ->assertSee('Starting a call from the Holler widget ends this assist. Put it on hold first to keep it.');
 
     $config = stageConfig($response);
 
@@ -61,6 +61,31 @@ it('hosts the core\'s stage in the panel, with what its script needs and the pan
     config()->set('holler.poll.active', 2500);
 
     expect(stageConfig($this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id])))['calls']['pollMs'])->toBe(2500);
+});
+
+it('has the pointer toggle and Put on hold as panel buttons, over the panel\'s own Holler hold and resume routes', function () {
+    $this->needsCalls();
+
+    $request = $this->claimedBy($this->staff());
+
+    $response = $this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]))
+        ->assertOk()
+        // On by default (the core's script keeps it pressed), with the core's label.
+        ->assertSee('data-action="pointer"', false)
+        ->assertSee('Show my pointer')
+        // Hidden until the script knows the routes are there; the reason it is disabled goes under it.
+        ->assertSee('data-action="hold"', false)
+        ->assertSee('data-why="hold"', false)
+        ->assertSee('Put on hold')
+        // The badge for the stage's `on_hold` phase.
+        ->assertSee('On hold');
+
+    expect(preg_match('/data-action="pointer"[^>]*aria-pressed="true"|aria-pressed="true"[^>]*data-action="pointer"/', $response->getContent()))->toBe(1);
+
+    $routes = stageConfig($response)['calls']['routes'];
+
+    expect($routes['hold'])->toBe(route('filament.admin.filament-holler.hold', ['call' => '__ID__']))
+        ->and($routes['resume'])->toBe(route('filament.admin.filament-holler.resume', ['call' => '__ID__']));
 });
 
 it('opens the stage to the agent who holds the request only, asking the gate and canAssist again', function () {

@@ -81,8 +81,9 @@
     "Reconnecting": "Verbindet neu",
     "Live": "Live",
     "Tab hidden": "Tab verborgen",
+    "On hold": "Gehalten",
     "Over": "Beendet",
     "No live view": "Keine Live-Ansicht",
-    "Starting a call from the Holler widget ends this assist.": "Ein Anruf aus dem Holler-Widget beendet diese Hilfe.",
+    "Starting a call from the Holler widget ends this assist. Put it on hold first to keep it.": "Ein Anruf aus dem Holler-Widget beendet diese Hilfe. Halte sie vorher, um sie zu behalten.",
     "Nothing yet.": "Noch nichts."
 }
