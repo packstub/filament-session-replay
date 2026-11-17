@@ -73,11 +73,11 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "homepage": "https://github.com/packstub/filament-session-replay",
+    "homepage": "https://packstub.dev/plugins/filament-session-replay",
     "support": {
         "issues": "https://github.com/packstub/filament-session-replay/issues",
         "source": "https://github.com/packstub/filament-session-replay",
-        "docs": "https://github.com/packstub/filament-session-replay/tree/main/docs"
+        "docs": "https://packstub.dev/docs/filament-session-replay"
     },
     "suggest": {
         "packstub/holler": "Assist's live view: the visitor's page mirrored, remote control, drawing, audio and screen share between the visitor and the agent who takes their help request (WebRTC, signaling over polled HTTP).",

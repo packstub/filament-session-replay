@@ -17,6 +17,12 @@ Session replay inside your Filament panel. "The form did nothing when I clicked 
 
 ![A replay on the watch page: the pointer clicks "Save changes" again and again, the save fails, and the server error's details open with its report id and "Open in logs"](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/demo.gif)
 
+<div class="filament-hidden">
+
+Featured on Laravel News: [Session Replay for Laravel: Self-Hosted Browser Recordings](https://laravel-news.com/laravel-session-replay).
+
+</div>
+
 ## Features
 
 - **[Recording without a directive](#recording-a-panel)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
@@ -206,6 +212,25 @@ See [CHANGELOG.md](https://github.com/packstub/filament-session-replay/blob/main
 ## Security
 
 Please report security issues to support@packstub.dev instead of the issue tracker.
+
+<div class="filament-hidden">
+
+## More from Packstub
+
+Other Packstub plugins that sit well next to this one:
+
+- **[Filament Tenancy](https://packstub.dev/plugins/filament-tenancy)** (paid): a database per tenant for Filament panels, built on stancl/tenancy. Session Replay lists each workspace's own recordings and keeps its index on the central connection, so the two fit together.
+- **[Filament Account Switcher](https://packstub.dev/plugins/filament-account-switcher)**: impersonation, linked accounts and one-click developer logins in the panel. Session Replay flags the sessions recorded while impersonating with it.
+- **[Filament Agents](https://packstub.dev/plugins/filament-agents)**: an AI assistant in the panel and an MCP server from one list of tools, under the panel's own authorization.
+- **[Filament Flow](https://packstub.dev/plugins/filament-flow)**: visual workflow automations for a Filament panel, with triggers, conditions and actions drawn on a canvas.
+- **[Filament Kanban](https://packstub.dev/plugins/filament-kanban)**: a Kanban board for Filament with instant drag and drop and rules checked on the server.
+- **[Nitpick](https://packstub.dev/plugins/filament-nitpick)**: themes for Filament panels, and a way for every person to pick their own.
+
+All plugins: [packstub.dev/plugins](https://packstub.dev/plugins).
+
+Packstub is made by [XLITE](https://xlite.dev), a small studio that also builds Laravel and Filament apps for clients.
+
+</div>
 
 ## Credits
 
