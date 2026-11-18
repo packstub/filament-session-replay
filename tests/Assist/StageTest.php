@@ -1,7 +1,9 @@
 <?php
 
+use Filament\Facades\Filament;
 use Illuminate\Testing\TestResponse;
 use Packstub\SessionReplay\Facades\SessionReplay;
+use Packstub\SessionReplay\Filament\Assist\PanelAssist;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Support\Assist;
@@ -208,4 +210,28 @@ it('sends the core\'s mirror policy with the live view, and loads the page in fu
     config()->set('session-replay.assist.mirror_sources', ['*']);
 
     $this->get($url)->assertOk()->assertHeaderMissing('Content-Security-Policy');
+});
+
+it('keeps a workspace\'s request without a recording on the stage of the agent who took it, and takes it off them once they may not help', function () {
+    $this->withoutCalls();
+    $acme = $this->team('Acme');
+
+    $request = $this->waiting();
+    $request->forceFill(['replay_session_id' => null, 'tenant_type' => $acme->getMorphClass(), 'tenant_id' => (string) $acme->getKey()])->save();
+
+    $this->signIn($agent = $this->staff());
+    Filament::setTenant($acme, isQuiet: true);
+    app(Assist::class)->claim($agent, $request->refresh(), PanelAssist::workspace());
+
+    // The stage's status poll is the core's route, outside the panel and its workspace: holding the request is enough.
+    $this->getJson(route('session-replay.assist.status', $request->id))->assertOk()->assertJsonPath('status', 'claimed');
+
+    // The agent loses the right to help: the poll takes the request off them, back to the list, and the stage ends
+    // ("you may no longer help", the core's words; the panel's Over badge).
+    SessionReplay::canAssistUsing(fn () => false);
+
+    $this->getJson(route('session-replay.assist.status', $request->id))->assertForbidden();
+
+    expect($request->refresh()->status)->toBe(AssistRequest::OPEN)
+        ->and(__('session-replay::viewer.stage.end_reasons.not_allowed'))->toBe('you may no longer help');
 });
