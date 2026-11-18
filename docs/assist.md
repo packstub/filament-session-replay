@@ -16,7 +16,26 @@ Run `php artisan migrate` for the core's `replay_assist_requests` table. Assist 
 SessionReplayPlugin::make()->assist(false);
 ```
 
-For the live view, add [Holler for Laravel](https://github.com/packstub/holler) (`packstub/holler`) and [Filament Holler](https://github.com/packstub/filament-holler) (`packstub/filament-holler`). Both are suggested, not required, and released on their own schedule, so follow their READMEs to install them. Then register Filament Holler on the same panel. The live view then talks over the panel's own Holler routes, as the panel's user. Without Filament Holler on the panel, register `Holler::routes()` in `routes/web.php` as the core's guide says, and make `holler.guard` the panel's guard.
+For the live view, add [Filament Holler](https://github.com/packstub/filament-holler), which brings [Holler for Laravel](https://github.com/packstub/holler) along (both are suggested, not required):
+
+```bash
+composer require packstub/filament-holler
+php artisan migrate
+php artisan filament:assets
+```
+
+Register it on the same panel as Session Replay:
+
+```php
+use Packstub\FilamentHoller\FilamentHollerPlugin;
+
+$panel->plugins([
+    SessionReplayPlugin::make(),
+    FilamentHollerPlugin::make(),
+]);
+```
+
+And schedule Holler's cleanup with `Schedule::command('holler:prune')->daily();`. The live view then talks over the panel's own Holler routes, as the panel's user, and the Holler widget sits beside it. Without Filament Holler on the panel, `composer require packstub/holler`, register `Holler::routes()` in `routes/web.php` as the core's guide says, and make `holler.guard` the panel's guard.
 
 When the panel signs people in with a guard of its own (`->authGuard('admin')`), set `session-replay.viewer.guard` to it, as for the player: the live view asks the core's agent routes for the request's status, and those run the viewer's middleware and gate.
 

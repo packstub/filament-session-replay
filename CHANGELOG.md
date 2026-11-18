@@ -4,7 +4,7 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ## Unreleased
 
-Assist in the panel: help requests and a live view of the visitor's page. Needs Session Replay 1.2 (`packstub/session-replay: ^1.2`) with `SESSION_REPLAY_ASSIST` on; the live view also needs [Holler for Laravel](https://github.com/packstub/holler) and [Filament Holler](https://github.com/packstub/filament-holler) (suggested, released separately). See [Assist](docs/assist.md).
+Assist in the panel: help requests and a live view of the visitor's page. Needs Session Replay 1.2 (`packstub/session-replay: ^1.2`) with `SESSION_REPLAY_ASSIST` on; the live view also needs [Holler for Laravel](https://github.com/packstub/holler) and [Filament Holler](https://github.com/packstub/filament-holler) (suggested: `composer require packstub/filament-holler`). See [Assist](docs/assist.md).
 
 **Security:** on Filament 5.11 and later, the watch page of a recording the `viewSessionReplay` gate (or the policy) refused still opened for anyone who could see the Sessions list, showing whose recording it was and when; the player's data stayed behind the gate. The page asks the gate again on every Filament 5.
 

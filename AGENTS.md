@@ -15,7 +15,7 @@ The core comes from Packagist (`^1.2`, `minimum-stability` `stable`). To work on
 
 ### Local setup for Assist (core, Holler and Filament Holler from the sibling checkouts)
 
-`packstub/holler` and `packstub/filament-holler` are only in `suggest`, so CI runs the Assist tests that need them as skipped (`needsCalls()`). Locally, install with an uncommitted `composer.local.json` (a copy of `composer.json` plus path repositories, symlinked) and `COMPOSER=composer.local.json composer update`:
+`packstub/holler` and `packstub/filament-holler` (1.0 on Packagist) are in `suggest` for apps and in `require-dev` here, so CI runs the Assist tests against the released Holler; without them those tests skip (`needsCalls()`). To work on Holler and this package at once, install with an uncommitted `composer.local.json` (a copy of `composer.json` plus path repositories, symlinked) and `COMPOSER=composer.local.json composer update`:
 
 ```json
 "repositories": [
@@ -39,7 +39,7 @@ The core comes from Packagist (`^1.2`, `minimum-stability` `stable`). To work on
 - `tests/Assist` (`AssistTestCase`: Assist on, the Holler providers and `Fixtures/AssistPanelProvider` with Filament Holler when installed) — the Requests page, actions, gating, the stage page and the notifier.
 - `tests/Fixtures` — the admin panel, a `UserResource` using the relation manager, the action and the macros, a policy; `workbench/` — the app behind `composer serve`.
 - `workbench/lab/measure.mjs` — the measuring lab (Playwright against `composer serve`, the workbench's Orders resource): stored bytes and events per scenario, interaction latency with and without the recorder. The numbers in `docs/installation.md` and the core's `docs/storage.md` come from it; re-run it after a recorder change.
-- `workbench/lab/assist.mjs` — Assist in a real panel between two browsers: Ada's page asks for help, Ana (`/lab/agent`, which signs her in) gets the toast, claims on Help requests, reaches a live stage (WebRTC on loopback) beside the Filament Holler widget, navigates away with `wire:navigate` and back through Open live view, and ends it; screenshots of the new pages in light and dark in `OUT`. Needs Holler and Filament Holler linked (above) and the workbench built with `SESSION_REPLAY_ASSIST=1`. Run it after a change in the core's stage or in the Assist pages here.
+- `workbench/lab/assist.mjs` — Assist in a real panel between two browsers: Ada's page asks for help, Ana (`/lab/agent`, which signs her in) gets the toast, claims on Help requests, reaches a live stage (WebRTC on loopback) beside the Filament Holler widget, navigates away with `wire:navigate` and back through Open live view, and ends it; screenshots of the new pages in light and dark in `OUT`. Needs Holler and Filament Holler (from Packagist, or linked as above) and the workbench built with `SESSION_REPLAY_ASSIST=1`. Run it after a change in the core's stage or in the Assist pages here.
 - `workbench/lab/navigate.mjs` — the browser check for `wire:navigate`: each scenario starts the workbench with `LAB_SPA=1` and its knobs (`LAB_EXCEPT_ROUTES`, `LAB_IMPERSONATE_ON`, `SESSION_REPLAY_MODE`) and checks what was stored: excluded pages stay out, console messages during a swap are kept, an identity change starts a new recording. Exits 1 on a failed check. `RECORDER=path` serves a core build that is not released yet. Run it after a change in the core's `resources/js`.
 - `docs/` — customer docs; synced into the store under `filament-session-replay/1.x` once public.
 

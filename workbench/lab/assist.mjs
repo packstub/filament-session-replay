@@ -9,7 +9,7 @@
 //   SESSION_REPLAY_ASSIST=1 composer serve   (once, to build the workbench database with Assist's and Holler's tables; then stop it)
 //   cd workbench/lab && npm install && node assist.mjs
 //
-// Needs packstub/holler and packstub/filament-holler linked (AGENTS.md, "Assist"). CHANNEL=chrome runs the installed
+// Needs packstub/holler and packstub/filament-holler (dev dependencies; or linked, AGENTS.md "Assist"). CHANNEL=chrome runs the installed
 // Chrome instead of Playwright's; PORT=8125 by default; LAB_SPA=0 runs the panel without wire:navigate.
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';

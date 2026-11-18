@@ -37,7 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             // LAB_IMPERSONATE_ON=admin/orders: pages on that path are signed with an impersonator, for the lab's identity check.
             ->plugin(SessionReplayPlugin::make()->widget()->navigationGroup('Support')->impersonatorUsing(fn () => env('LAB_IMPERSONATE_ON') && request()->is(env('LAB_IMPERSONATE_ON')) ? '7' : null))
-            // Filament Holler beside the Assist stage, when it is linked (see AGENTS.md): its widget polls kind=call.
+            // Filament Holler beside the Assist stage (a dev dependency): its widget polls kind=call.
             ->plugins(class_exists(FilamentHollerPlugin::class) && env('SESSION_REPLAY_ASSIST') ? [FilamentHollerPlugin::make()] : [])
             ->middleware([
                 EncryptCookies::class,
