@@ -82,9 +82,8 @@ class PanelAssist
         $queue = request()->attributes->get($key);
 
         if (! $queue instanceof Collection) {
-            $tenant = Filament::getTenant();
             // Scoped in the query (and the core's timeouts run over this workspace only, at most every few seconds).
-            $queue = app(Assist::class)->queue($agent, $tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant() ? $tenant : null);
+            $queue = app(Assist::class)->queue($agent, static::workspace());
 
             request()->attributes->set($key, $queue);
         }
@@ -120,12 +119,34 @@ class PanelAssist
         return app(Assist::class)->holds(static::agent(), $request);
     }
 
-    /** Whether this agent may see and act on the request, as the core's agent routes ask it. */
+    /**
+     * Whether this agent may see and act on the request: as the core's agent routes ask it, and inside the panel's
+     * current workspace, the same rule as queue(). The toast's Claim, the actions and the live view all ask this, so
+     * a request of another workspace (one without a recording never reaches the per-recording gate) stays out of reach.
+     */
     public static function allows(AssistRequest $request): bool
     {
         $agent = static::agent();
 
-        return $agent !== null && static::enabled() && app(Assist::class)->visibleTo($request, $agent);
+        if ($agent === null || ! static::enabled()) {
+            return false;
+        }
+
+        $workspace = static::workspace();
+
+        if ($workspace !== null && ($request->tenant_type !== $workspace->getMorphClass() || $request->tenant_id !== (string) $workspace->getKey())) {
+            return false;
+        }
+
+        return app(Assist::class)->visibleTo($request, $agent);
+    }
+
+    /** The panel's current workspace, when the resource is scoped to it: requests outside it are not this panel's. */
+    protected static function workspace(): ?Model
+    {
+        $tenant = Filament::getTenant();
+
+        return $tenant instanceof Model && SessionReplayPlugin::get()->isScopedToTenant() ? $tenant : null;
     }
 
     /** The request going on this recording, whoever holds it. */

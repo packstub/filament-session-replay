@@ -30,7 +30,7 @@ use Packstub\SessionReplay\Facades\SessionReplay;
 SessionReplay::canAssistUsing(fn ($agent, $session, $request): bool => $agent->hasRole('support'));
 ```
 
-Every list, badge, notification and action in the panel reads the core's queue for the signed-in user, so a request the rule refuses is never listed, counted, announced or claimable; each action asks the core again when it runs. Nobody is offered their own visit. In a panel with tenancy, the requests are the current workspace's, like the recordings (`scopeToTenant(false)` lists every workspace's).
+Every list, badge, notification and action in the panel reads the core's queue for the signed-in user, so a request the rule refuses is never listed, counted, announced or claimable; each action asks the core again when it runs. Nobody is offered their own visit. In a panel with tenancy, the requests are the current workspace's, like the recordings (`scopeToTenant(false)` lists every workspace's): a request of another workspace cannot be claimed or opened from it either, by any route into the panel.
 
 ## Help requests
 

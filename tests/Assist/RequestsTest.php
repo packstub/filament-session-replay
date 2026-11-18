@@ -4,13 +4,16 @@ use Filament\Facades\Filament;
 use Livewire\Livewire;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
+use Packstub\SessionReplay\Filament\Livewire\AssistNotifier;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistRequests;
+use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\AssistStage;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ListReplaySessions;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages\ViewReplaySession;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Models\ReplaySession;
 use Packstub\SessionReplay\SessionReplayPlugin;
+use Packstub\SessionReplay\Support\Assist;
 
 beforeEach(function () {
     $this->staffGate();
@@ -202,6 +205,41 @@ it('shows a Live now tab with the recordings heard from in the last two minutes,
         ->assertCanSeeTableRecords([$live['session']])
         ->assertCanNotSeeTableRecords([$quiet['session']])
         ->assertSee('last seen 40 s ago');
+});
+
+it('keeps another workspace\'s request out of reach: no claim from the notifier\'s event, no stage', function () {
+    $this->withoutCalls();
+    $acme = $this->team('Acme');
+    $globex = $this->team('Globex');
+
+    // A request without a recording: the per-recording gate never sees it, only the workspace rule does.
+    $theirs = $this->waiting();
+    $theirs->forceFill(['replay_session_id' => null, 'tenant_type' => $globex->getMorphClass(), 'tenant_id' => (string) $globex->getKey()])->save();
+
+    $this->signIn($agent = $this->staff());
+    Filament::setTenant($acme, isQuiet: true);
+
+    expect(PanelAssist::allows($theirs->refresh()))->toBeFalse();
+
+    // The browser can dispatch the toast's Claim with any id.
+    Livewire::test(AssistNotifier::class)
+        ->dispatch(AssistNotifier::CLAIM_EVENT, id: $theirs->id)
+        ->assertNotified('Not possible');
+
+    expect($theirs->refresh()->status)->toBe(AssistRequest::OPEN);
+
+    // Held anyway (claimed in Globex's panel, say): the stage in Acme's panel still refuses it.
+    app(Assist::class)->claim($agent, $theirs);
+    PanelAssist::flush();
+
+    expect(PanelAssist::allows($theirs->refresh()))->toBeFalse();
+    Livewire::test(AssistStage::class, ['assistRequest' => $theirs->id])->assertForbidden();
+
+    // Unscoped, the core's rules decide alone.
+    SessionReplayPlugin::get()->scopeToTenant(false);
+    PanelAssist::flush();
+
+    expect(PanelAssist::allows($theirs))->toBeTrue();
 });
 
 it('narrows the queue to the panel\'s current workspace in the query, unless told otherwise', function () {
