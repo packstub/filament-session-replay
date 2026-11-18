@@ -38,7 +38,9 @@
         "pestphp/pest": "^4.0|^5.1",
         "pestphp/pest-plugin-laravel": "^4.0|^5.0",
         "pestphp/pest-plugin-livewire": "^4.0|^5.0",
-        "orchestra/pest-plugin-testbench": "^4.0|^5.0"
+        "orchestra/pest-plugin-testbench": "^4.0|^5.0",
+        "packstub/holler": "^1.0",
+        "packstub/filament-holler": "^1.0"
     },
     "autoload": {
         "psr-4": {
