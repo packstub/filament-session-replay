@@ -187,3 +187,25 @@ it('keeps the stage out of the recording, like every page of the resource', func
         ->assertOk()
         ->assertDontSee(SessionReplay::scriptUrl('recorder.js'), false);
 });
+
+it('sends the core\'s mirror policy with the live view, and loads the page in full when wire:navigate brings it', function () {
+    $request = $this->claimedBy($this->staff());
+    $url = ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]);
+    $policy = app(Assist::class)->mirrorPolicy();
+
+    // The mirror inherits the page's policy: images, styles, fonts and media only from the app.
+    expect($policy)->toContain('img-src');
+
+    $this->get($url)
+        ->assertOk()
+        ->assertHeader('Content-Security-Policy', $policy)
+        // A header on a wire:navigate fetch applies to nothing: the page reloads itself in full, and leaves in full.
+        ->assertSee('data-fsr-stage-document', false);
+
+    $this->get($url, ['X-Livewire-Navigate' => '1'])->assertHeader('Content-Security-Policy', $policy);
+
+    // "*" in assist.mirror_sources: no policy.
+    config()->set('session-replay.assist.mirror_sources', ['*']);
+
+    $this->get($url)->assertOk()->assertHeaderMissing('Content-Security-Policy');
+});

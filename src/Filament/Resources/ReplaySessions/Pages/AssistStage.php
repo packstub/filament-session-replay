@@ -10,6 +10,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Livewire\Attributes\Locked;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
+use Packstub\SessionReplay\Filament\Http\Middleware\SendMirrorPolicy;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -26,6 +27,11 @@ use Packstub\SessionReplay\Models\ReplaySession;
  * livewire:navigating) while the request stays the agent's; Open live view on
  * the Requests page brings them back.
  *
+ * The core's mirror policy goes with the page (SendMirrorPolicy). A header
+ * counts only for a document loaded in full, so the view reloads the page when
+ * wire:navigate brings it, and leaves it with a full load too, so the policy
+ * does not stay with the panel's other pages.
+ *
  * Only the agent who holds the request (claimed, offered or live) opens it; the
  * gate, visibleUsing() and canAssist are asked again, as on the core's routes.
  */
@@ -34,6 +40,9 @@ class AssistStage extends Page
     protected static string $resource = ReplaySessionResource::class;
 
     protected string $view = 'filament-session-replay::assist.stage';
+
+    /** @var array<class-string> */
+    protected static string|array $routeMiddleware = [SendMirrorPolicy::class];
 
     protected Width|string|null $maxContentWidth = Width::Full;
 

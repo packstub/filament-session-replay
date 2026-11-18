@@ -27,6 +27,23 @@
     {{-- The core's stage: rrweb's Replayer in live mode and the calls engine, from its script route. A full page load always brings it (the page is never reached through wire:navigate). --}}
     <link rel="stylesheet" href="{{ SessionReplay::scriptUrl('stage.css') }}" @if ($nonce) nonce="{{ $nonce }}" @endif>
     <script src="{{ SessionReplay::scriptUrl('stage.js') }}" defer @if ($nonce) nonce="{{ $nonce }}" @endif></script>
+    {{-- The mirror's policy is a response header (SendMirrorPolicy), which counts only for a document loaded in full: when wire:navigate brought this page, load it again; leaving it is a full load too, so the policy does not follow the agent around the panel. --}}
+    <script data-fsr-stage-document @if ($nonce) nonce="{{ $nonce }}" @endif>
+        (() => {
+            const loaded = performance.getEntriesByType('navigation')[0]?.name;
+
+            if (loaded && new URL(loaded).pathname !== window.location.pathname) {
+                window.location.reload();
+
+                return;
+            }
+
+            document.addEventListener('livewire:navigate', (event) => {
+                event.preventDefault();
+                window.location.href = String(event.detail.url);
+            });
+        })();
+    </script>
 
     <style @if ($nonce) nonce="{{ $nonce }}" @endif>
         /* The core's stage.css lays out the mirror; around it, the panel's own components and colours. */

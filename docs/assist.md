@@ -110,13 +110,15 @@ The visitor's page is outside the panel, so it takes its ICE servers from Holler
 
 ### A page of its own
 
-The live view is a page of its own, always loaded in full: Claim, Offer help and Open live view go to it with a page load, never with `wire:navigate`. It is **not** kept across navigation. Leaving it (a link in the sidebar, the back button, closing the tab) leaves the call, and the request stays yours:
+The live view is a page of its own, always loaded in full: Claim, Offer help and Open live view go to it with a page load, never with `wire:navigate`. It is **not** kept across navigation. Leaving it (a link in the sidebar, the back button, closing the tab; always with a full page load) leaves the call, and the request stays yours:
 
 - Back through **Open live view** within Holler's `reconnect_timeout` (15 s): the same call, with a fresh picture of their page.
 - Away longer: Holler lets go of your side, but the request waits for you. The visitor's page says you stepped away and are reconnecting, and when you open the live view again a new call starts on its own, live again.
 - Not back within `assist.claim_timeout_seconds` (30) after that: the request goes back to the list, waiting, for anyone to claim.
 
 To keep working in the panel during an assist, open the panel in another tab.
+
+The page sends the core's mirror policy, a `Content-Security-Policy` header that lets the mirror load images, styles, fonts and media only from your app, so a visitor cannot make your browser fetch a URL of theirs and learn your address (see the core's Assist guide, Privacy). Your app's own policy, if it sends one, still applies beside it. Assets the panel itself loads from another host on this page, such as avatars from ui-avatars.com, need that origin in `session-replay.assist.mirror_sources` (`SESSION_REPLAY_ASSIST_MIRROR_SOURCES`), or they show missing here; `*` sends no policy. A header only counts for a page loaded in full, so the live view reloads itself if `wire:navigate` ever brings it, and a link out of it is a full page load too.
 
 Why not `@persist`: Livewire moves a persisted element into the next page, and a frame moved in the page reloads its document, which would blank the mirror; the replayer, the call and the overlay also need the room the page gives them. A page of its own keeps one simple rule: the live view is where the stage is.
 
