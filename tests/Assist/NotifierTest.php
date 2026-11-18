@@ -85,17 +85,30 @@ it('tells only agents who may take the request', function () {
     Notification::assertNotNotified();
 });
 
-it('puts the notification in the bell too when the panel has database notifications on', function () {
+it('puts a note in the bell too when the panel has database notifications on, naming no person and no message', function () {
     $this->withoutCalls();
     $this->signIn($agent = $this->staff());
     Filament::getCurrentPanel()->databaseNotifications();
 
-    $this->waiting($this->user(['email' => 'ada@example.com']));
+    $request = $this->waiting($this->user(['email' => 'ada@example.com']), 'My card 4242 was charged twice');
 
     Livewire::test(AssistNotifier::class)->call('check');
 
-    expect(DB::table('notifications')->where('notifiable_id', $agent->id)->count())->toBe(1)
-        ->and(json_decode(DB::table('notifications')->value('data'), true)['title'])->toBe('ada@example.com asked for help');
+    // The notifications table outlives the request (prune never reaches it): nothing of the visitor goes in.
+    $stored = DB::table('notifications')->where('notifiable_id', $agent->id)->get();
+    $data = json_decode($stored->first()->data, true);
+
+    expect($stored)->toHaveCount(1)
+        ->and($data['title'])->toBe('Someone asked for help')
+        ->and($data['body'])->toBeNull()
+        ->and(collect($data['actions'])->pluck('name')->all())->toBe(['requests'])
+        ->and($stored->first()->data)->not->toContain('ada@example.com')
+        ->not->toContain('4242')
+        ->not->toContain('app.test')
+        ->not->toContain($request->id);
+
+    // The toast, gone with the browser session, still says who and what.
+    expect(sentToasts()->firstWhere('id', 'session-replay-assist-'.$request->id))->toMatchArray(['title' => 'ada@example.com asked for help']);
 });
 
 it('keeps a burst to three toasts, the last one saying how many more wait', function () {

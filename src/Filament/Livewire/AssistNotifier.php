@@ -19,8 +19,9 @@ use Packstub\SessionReplay\SessionReplayPlugin;
 /**
  * On every page of a panel with Assist, for someone who may help: asks the
  * core's queue every few seconds and tells the agent about each visitor who
- * started waiting, once per browser session, with a toast (and in the bell too
- * when the panel has database notifications on). The notification's Claim
+ * started waiting, once per browser session, with a toast (and a note without
+ * the person or their words in the bell, when the panel has database
+ * notifications on). The toast's Claim
  * comes back here as a browser event and claims through the core.
  *
  * No query of its own: the queue is the core's (the gate, visibleUsing(),
@@ -107,9 +108,21 @@ class AssistNotifier extends Component
 
         $notification->send();
 
-        // In the bell as well, where the panel keeps notifications; the toast alone otherwise.
+        // In the bell as well, where the panel keeps notifications; the toast alone otherwise. Laravel's notifications
+        // table outlives the request (the core's prune and retention never reach it), so the bell gets a note that
+        // names nobody and quotes nothing: who asked and what they wrote stay on the request.
         if ($agent !== null && Filament::getCurrentPanel()?->hasDatabaseNotifications() && method_exists($agent, 'notify')) {
-            $notification->sendToDatabase($agent, isEventDispatched: true);
+            Notification::make()
+                ->title(__('Someone asked for help'))
+                ->icon(AssistActions::icon(Icon::ASSIST_REQUESTED, Heroicon::OutlinedLifebuoy))
+                ->iconColor('warning')
+                ->actions([
+                    Action::make('requests')
+                        ->label(__('View requests'))
+                        ->link()
+                        ->url(PanelAssist::requestsUrl()),
+                ])
+                ->sendToDatabase($agent, isEventDispatched: true);
         }
     }
 

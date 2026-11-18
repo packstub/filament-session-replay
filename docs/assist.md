@@ -53,7 +53,7 @@ The table refreshes every five seconds. Its actions:
 
 ### Notifications
 
-While someone waits, everyone who may take the request gets a toast on whatever panel page they are on: who asked, their message, **Claim** and **View requests**. Each request is announced once per browser session (again if it comes back to the list). With database notifications on in the panel (`->databaseNotifications()`), it also lands in the bell. A burst shows three toasts at most, the last saying how many more wait. `->assistNotifications(false)` turns them off; the badge stays.
+While someone waits, everyone who may take the request gets a toast on whatever panel page they are on: who asked, their message, **Claim** and **View requests**. Each request is announced once per browser session (again if it comes back to the list). With database notifications on in the panel (`->databaseNotifications()`), a note lands in the bell too, "Someone asked for help" with a link to the list: it names nobody and quotes nothing, since Laravel's `notifications` table is kept past the recordings' retention. A burst shows three toasts at most, the last saying how many more wait. `->assistNotifications(false)` turns them off; the badge stays.
 
 The notifier asks the queue every ten seconds while the tab is visible (Livewire slows it down in a hidden tab).
 
