@@ -187,6 +187,9 @@ it('offers no help without Holler, and nothing at all while Assist is off in the
 });
 
 it('shows a Live now tab with the recordings heard from in the last two minutes, and when', function () {
+    // "40 s ago" is read when the table renders: a second ticking over in between would make it 41.
+    $this->freezeTime();
+
     $live = $this->browser($this->user(['email' => 'live@example.com']));
     $quiet = $this->browser($this->user(['email' => 'quiet@example.com']), ['last_activity_at' => now()->subMinutes(5)]);
     $live['session']->forceFill(['last_activity_at' => now()->subSeconds(40)])->save();
