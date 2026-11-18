@@ -229,7 +229,7 @@ it('keeps another workspace\'s request out of reach: no claim from the notifier\
     expect($theirs->refresh()->status)->toBe(AssistRequest::OPEN);
 
     // Held anyway (claimed in Globex's panel, say): the stage in Acme's panel still refuses it.
-    app(Assist::class)->claim($agent, $theirs);
+    app(Assist::class)->claim($agent, $theirs, $globex);
     PanelAssist::flush();
 
     expect(PanelAssist::allows($theirs->refresh()))->toBeFalse();
@@ -240,6 +240,28 @@ it('keeps another workspace\'s request out of reach: no claim from the notifier\
     PanelAssist::flush();
 
     expect(PanelAssist::allows($theirs))->toBeTrue();
+});
+
+it('lets an agent of the workspace take its request without a recording: listed, claimed from the toast, the stage opens', function () {
+    $this->withoutCalls();
+    $acme = $this->team('Acme');
+
+    // Without a recording the core shows a workspace's request only to an agent placed in that workspace: the panel's.
+    $ours = $this->waiting();
+    $ours->forceFill(['replay_session_id' => null, 'tenant_type' => $acme->getMorphClass(), 'tenant_id' => (string) $acme->getKey()])->save();
+
+    $this->signIn($agent = $this->staff());
+    Filament::setTenant($acme, isQuiet: true);
+
+    expect(PanelAssist::queue()->pluck('id')->all())->toBe([$ours->id])
+        ->and(PanelAssist::allows($ours->refresh()))->toBeTrue();
+
+    Livewire::test(AssistNotifier::class)
+        ->dispatch(AssistNotifier::CLAIM_EVENT, id: $ours->id)
+        ->assertNotified('Claimed');
+
+    expect($ours->refresh()->status)->toBe(AssistRequest::CLAIMED)
+        ->and($ours->agent_id)->toBe((string) $agent->id);
 });
 
 it('narrows the queue to the panel\'s current workspace in the query, unless told otherwise', function () {

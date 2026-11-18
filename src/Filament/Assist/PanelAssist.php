@@ -120,29 +120,20 @@ class PanelAssist
     }
 
     /**
-     * Whether this agent may see and act on the request: as the core's agent routes ask it, and inside the panel's
-     * current workspace, the same rule as queue(). The toast's Claim, the actions and the live view all ask this, so
-     * a request of another workspace (one without a recording never reaches the per-recording gate) stays out of reach.
+     * Whether this agent may see and act on the request: the core's rule, placed in the panel's current workspace as
+     * queue() is. The toast's Claim, the actions and the live view all ask this, so a request of another workspace
+     * stays out of reach, and one of this workspace without a recording (which the core shows only to an agent placed
+     * in its workspace) is within reach.
      */
     public static function allows(AssistRequest $request): bool
     {
         $agent = static::agent();
 
-        if ($agent === null || ! static::enabled()) {
-            return false;
-        }
-
-        $workspace = static::workspace();
-
-        if ($workspace !== null && ($request->tenant_type !== $workspace->getMorphClass() || $request->tenant_id !== (string) $workspace->getKey())) {
-            return false;
-        }
-
-        return app(Assist::class)->visibleTo($request, $agent);
+        return $agent !== null && static::enabled() && app(Assist::class)->visibleTo($request, $agent, static::workspace());
     }
 
     /** The panel's current workspace, when the resource is scoped to it: requests outside it are not this panel's. */
-    protected static function workspace(): ?Model
+    public static function workspace(): ?Model
     {
         $tenant = Filament::getTenant();
 

@@ -52,7 +52,7 @@ class AssistActions
         }
 
         try {
-            app(Assist::class)->claim($agent, $request);
+            app(Assist::class)->claim($agent, $request, PanelAssist::workspace());
         } catch (AssistRefused $refused) {
             PanelAssist::refused($refused);
 
