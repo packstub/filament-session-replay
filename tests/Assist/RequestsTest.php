@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Livewire\Livewire;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
@@ -170,6 +171,28 @@ it('offers help on a live recording from the list and the watch page, then the s
     Livewire::test(ViewReplaySession::class, ['record' => $live['session']->id])
         ->assertActionHidden('offerAssist')
         ->assertActionHidden('openAssistStageForSession');
+});
+
+it('says why Offer help is refused a few minutes after the visitor said not now, in the core\'s words', function () {
+    $this->needsCalls();
+
+    $live = $this->browser();
+    $this->signIn($this->staff());
+
+    Livewire::test(ViewReplaySession::class, ['record' => $live['session']->id])->callAction('offerAssist');
+
+    // The visitor's "Not now".
+    AssistRequest::query()->where('replay_session_id', $live['session']->id)->firstOrFail()
+        ->forceFill(['status' => AssistRequest::DECLINED, 'end_reason' => 'declined', 'ended_at' => now()])->save();
+
+    Livewire::test(ViewReplaySession::class, ['record' => $live['session']->id])
+        ->assertActionVisible('offerAssist')
+        ->callAction('offerAssist')
+        ->assertNoRedirect()
+        ->assertNotified(Notification::make()->title('Not possible')->body(__('session-replay::viewer.assist.declined_recently'))->danger());
+
+    expect(__('session-replay::viewer.assist.declined_recently'))->toBe('The visitor said not now a moment ago. Offer again in a few minutes.')
+        ->and(AssistRequest::query()->where('replay_session_id', $live['session']->id)->pending()->exists())->toBeFalse();
 });
 
 it('offers no help without Holler, and nothing at all while Assist is off in the panel', function () {
