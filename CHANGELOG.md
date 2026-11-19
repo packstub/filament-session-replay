@@ -15,7 +15,7 @@ Assist in the panel: help requests and a live view of the visitor's page. Needs 
 - **Show my pointer** (on by default): the visitor sees where you point while you watch, without remote control
 - **Put on hold** and **Resume** on the live view, to ring a colleague from the Holler widget, say; the visitor's page says you will be right back
 - Leaving the live view leaves the call and keeps the request: Open live view picks it up again
-- The live view sends Session Replay's mirror policy, so the visitor's page cannot make your browser load another site; add hosts the panel itself needs on that page (avatars, say) to `assist.mirror_sources`
+- The live view sends Session Replay's mirror policy, so the visitor's page cannot make your browser load another site (your app's own policy still applies beside it); add hosts the panel itself needs on that page (avatars, say) to `assist.mirror_sources`
 - `->assist(false)` keeps a panel to recordings; the Assist icons have aliases (`SessionReplayIconAlias`)
 - `composer.json`'s homepage and docs link point at packstub.dev
 

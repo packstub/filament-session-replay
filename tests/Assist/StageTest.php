@@ -1,12 +1,14 @@
 <?php
 
 use Filament\Facades\Filament;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Testing\TestResponse;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Models\AssistRequest;
 use Packstub\SessionReplay\Support\Assist;
+use Packstub\SessionReplay\Tests\Fixtures\AppPolicy;
 
 /** The stage's config, as the view writes it for the core's stage.js. */
 function stageConfig(TestResponse $response): array
@@ -210,6 +212,23 @@ it('sends the core\'s mirror policy with the live view, and loads the page in fu
     config()->set('session-replay.assist.mirror_sources', ['*']);
 
     $this->get($url)->assertOk()->assertHeaderMissing('Content-Security-Policy');
+});
+
+it('keeps the app\'s own policy on the live view, even from a middleware that skips a response that already has one', function () {
+    $request = $this->claimedBy($this->staff());
+    $policy = app(Assist::class)->mirrorPolicy();
+
+    // Like spatie/laravel-csp: around every route, and no policy of its own once the response carries one.
+    $this->app->make(Kernel::class)->pushMiddleware(AppPolicy::class);
+
+    $headers = $this->get(ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]))
+        ->assertOk()
+        ->headers->all('content-security-policy');
+
+    expect($headers)->toBe(["script-src 'self'", $policy]);
+
+    // The panel's other pages keep the app's policy alone.
+    expect($this->get(ReplaySessionResource::getUrl('requests'))->headers->all('content-security-policy'))->toBe(["script-src 'self'"]);
 });
 
 it('keeps a workspace\'s request without a recording on the stage of the agent who took it, and takes it off them once they may not help', function () {
