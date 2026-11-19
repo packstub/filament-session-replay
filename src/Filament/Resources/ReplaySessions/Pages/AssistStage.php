@@ -71,11 +71,15 @@ class AssistStage extends Page
         }
 
         $this->requestId = $model->getKey();
+        $this->requestModel = $model;
     }
+
+    /** Read once per HTTP request: the title, the header actions and the view all ask for it. */
+    protected ?AssistRequest $requestModel = null;
 
     public function getAssistRequest(): AssistRequest
     {
-        return AssistRequest::query()->with(['session', 'user'])->findOrFail($this->requestId);
+        return $this->requestModel ??= AssistRequest::query()->with(['session', 'user'])->findOrFail($this->requestId);
     }
 
     public function getTitle(): string|Htmlable

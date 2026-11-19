@@ -2,6 +2,7 @@
 
 use Filament\Facades\Filament;
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Packstub\SessionReplay\Facades\SessionReplay;
 use Packstub\SessionReplay\Filament\Assist\PanelAssist;
@@ -212,6 +213,19 @@ it('sends the core\'s mirror policy with the live view, and loads the page in fu
     config()->set('session-replay.assist.mirror_sources', ['*']);
 
     $this->get($url)->assertOk()->assertHeaderMissing('Content-Security-Policy');
+});
+
+it('reads the request once for the whole stage page', function () {
+    $request = $this->claimedBy($this->staff());
+    $url = ReplaySessionResource::getUrl('stage', ['assistRequest' => $request->id]);
+
+    DB::enableQueryLog();
+    $this->get($url)->assertOk();
+
+    // The title, the header actions, the view and the stage's config share the one the page opened with.
+    $reads = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_starts_with($query['query'], 'select') && str_contains($query['query'], 'from "replay_assist_requests" where "replay_assist_requests"."id" = ?'));
+
+    expect($reads)->toHaveCount(1);
 });
 
 it('keeps the app\'s own policy on the live view, even from a middleware that skips a response that already has one', function () {
