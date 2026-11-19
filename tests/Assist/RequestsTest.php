@@ -195,6 +195,28 @@ it('says why Offer help is refused a few minutes after the visitor said not now,
         ->and(AssistRequest::query()->where('replay_session_id', $live['session']->id)->pending()->exists())->toBeFalse();
 });
 
+it('says the same on the person\'s other recording, one the agent never offered help on', function () {
+    $this->needsCalls();
+
+    $ada = $this->user(['name' => 'Ada Visitor']);
+    $first = $this->browser($ada);
+    $second = $this->browser($ada);
+    $this->signIn($this->staff());
+
+    Livewire::test(ViewReplaySession::class, ['record' => $first['session']->id])->callAction('offerAssist');
+
+    AssistRequest::query()->where('replay_session_id', $first['session']->id)->firstOrFail()
+        ->forceFill(['status' => AssistRequest::DECLINED, 'end_reason' => 'declined', 'ended_at' => now()])->save();
+
+    // From the recordings list this time, on the tab Ada has open in another window.
+    Livewire::test(ListReplaySessions::class)
+        ->callTableAction('offerAssist', $second['session'])
+        ->assertNoRedirect()
+        ->assertNotified(Notification::make()->title('Not possible')->body(__('session-replay::viewer.assist.declined_recently'))->danger());
+
+    expect(AssistRequest::query()->where('replay_session_id', $second['session']->id)->exists())->toBeFalse();
+});
+
 it('offers no help without Holler, and nothing at all while Assist is off in the panel', function () {
     $live = $this->browser();
     $this->signIn($this->staff());
