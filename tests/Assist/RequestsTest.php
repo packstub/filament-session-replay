@@ -310,3 +310,53 @@ it('narrows the queue to the panel\'s current workspace in the query, unless tol
 
     expect(PanelAssist::queue())->toHaveCount(2);
 });
+
+it('says so when a request changed since the list showed it, instead of doing nothing', function () {
+    $this->withoutCalls();
+
+    $request = $this->waiting();
+    $this->signIn($agent = $this->staff());
+    $colleague = $this->staff(['name' => 'Ben Support']);
+
+    $page = Livewire::test(AssistRequests::class)->assertTableActionVisible('claimAssist', $request);
+
+    // Ben was faster, between the last poll and the click.
+    app(Assist::class)->claim($colleague, $request);
+
+    // What the browser sends for the click on the row it still shows (callTableAction() would refuse a hidden action).
+    $page->call('mountAction', 'claimAssist', [], ['table' => true, 'recordKey' => $request->id])
+        ->assertNotified('This request is not open any more.');
+
+    expect($request->refresh()->agent_id)->toBe((string) $colleague->id);
+
+    // End asks first; the request ends while the confirmation is open.
+    $ours = $this->waiting();
+    app(Assist::class)->claim($agent, $ours);
+    PanelAssist::flush();
+
+    $page = Livewire::test(AssistRequests::class)->mountTableAction('endAssist', $ours)->assertSet('mountedActions.0.name', 'endAssist');
+
+    app(Assist::class)->end($agent, $ours->refresh());
+
+    $page->call('callMountedAction')
+        ->assertNotified('This request is not open any more.')
+        ->assertHasNoTableActionErrors();
+
+    // Still listed, but back in the list (the claim lapsed) while the confirmation was open: End is not theirs to press.
+    $lapsed = $this->waiting();
+    app(Assist::class)->claim($agent, $lapsed);
+    PanelAssist::flush();
+
+    $page = Livewire::test(AssistRequests::class)->mountTableAction('endAssist', $lapsed);
+
+    $lapsed->refresh()->forceFill(['status' => AssistRequest::OPEN, 'agent_id' => null, 'agent_type' => null, 'agent_name' => null, 'claimed_at' => null])->save();
+    PanelAssist::flush();
+
+    $page->call('callMountedAction')->assertNotified('This request is not open any more.');
+
+    expect($lapsed->refresh()->status)->toBe(AssistRequest::OPEN);
+
+    // A row still there with its action still shown goes through as before.
+    PanelAssist::flush();
+    Livewire::test(AssistRequests::class)->callTableAction('claimAssist', $this->waiting())->assertNotified('Claimed');
+});

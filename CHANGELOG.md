@@ -8,7 +8,7 @@ Assist in the panel: help requests and a live view of the visitor's page. Needs 
 
 **Security:** on Filament 5.11 and later, the watch page of a recording the `viewSessionReplay` gate (or the policy) refused still opened for anyone who could see the Sessions list, showing whose recording it was and when; the player's data stayed behind the gate. The page asks the gate again on every Filament 5.
 
-- **Help requests** under the Sessions resource: who is waiting, their message and page, with Claim, Open live view, Withdraw and End; the number waiting is the navigation badge
+- **Help requests** under the Sessions resource: who is waiting, their message and page, with Claim, Open live view, Withdraw and End (a click on a request that changed meanwhile says so); the number waiting is the navigation badge
 - A toast for each new request, with Claim, and a note in the bell when the panel has database notifications, without the person's name or message (`->assistNotifications(false)` turns them off)
 - A **Live now** tab on the recordings list, "last seen" on live recordings, and **Offer help** on a live recording and its watch page
 - The **live view**: the visitor's page mirrored live on a panel page, with remote control, drawing, audio, video and screen share as the panel's own buttons, beside the Filament Holler widget

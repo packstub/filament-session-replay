@@ -3,6 +3,7 @@
 namespace Packstub\SessionReplay\Filament\Resources\ReplaySessions\Pages;
 
 use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\EmbeddedTable;
 use Filament\Schemas\Schema;
@@ -30,12 +31,17 @@ use Packstub\SessionReplay\Models\ReplaySession;
  */
 class AssistRequests extends Page implements HasTable
 {
-    use InteractsWithTable;
+    use InteractsWithTable {
+        bootedInteractsWithTable as bootTable;
+    }
 
     protected static string $resource = ReplaySessionResource::class;
 
     /** How often the list asks for news; the visitor's page polls every 3 s while it waits. */
     public const POLL = '5s';
+
+    /** The actions on a request: the row may have moved on (taken, ended, lapsed) since the agent saw it. */
+    protected const REQUEST_ACTIONS = ['claimAssist', 'openAssistStage', 'withdrawAssist', 'endAssist'];
 
     public static function canAccess(array $parameters = []): bool
     {
@@ -68,6 +74,78 @@ class AssistRequests extends Page implements HasTable
                 ->color('gray')
                 ->url(ReplaySessionResource::getUrl()),
         ];
+    }
+
+    /**
+     * A click on a request that changed since the last poll (someone else claimed it, the visitor left, the claim
+     * lapsed) says so, instead of Filament's silent no-op on a row that is gone or an action that is hidden now.
+     */
+    public function mountAction(string $name, array $arguments = [], array $context = []): mixed
+    {
+        if (! $this->requestStillAllows($name, $context)) {
+            $this->changedMeanwhile();
+
+            return null;
+        }
+
+        return parent::mountAction($name, $arguments, $context);
+    }
+
+    /**
+     * A confirmation (End) left open on a request that is gone from the queue: Filament drops it when the table
+     * boots, on the next poll or on the confirm, and the modal closes. Say why.
+     */
+    public function bootedInteractsWithTable(): void
+    {
+        $mounted = $this->mountedActions ?? [];
+
+        $this->bootTable();
+
+        $first = $mounted[0] ?? null;
+
+        if ($mounted !== [] && ($this->mountedActions ?? []) === [] && is_array($first)
+            && in_array($first['name'] ?? null, static::REQUEST_ACTIONS, true) && filled($first['context']['recordKey'] ?? null)) {
+            $this->changedMeanwhile();
+        }
+    }
+
+    /** The same after a confirmation modal (End): the request may have changed while it was open. */
+    public function callMountedAction(array $arguments = []): mixed
+    {
+        $mounted = end($this->mountedActions) ?: [];
+
+        if (count($this->mountedActions ?? []) === 1 && ! $this->requestStillAllows((string) ($mounted['name'] ?? ''), (array) ($mounted['context'] ?? []))) {
+            $this->unmountAction();
+            $this->changedMeanwhile();
+
+            return null;
+        }
+
+        return parent::callMountedAction($arguments);
+    }
+
+    /** @param  array<string, mixed>  $context */
+    protected function requestStillAllows(string $name, array $context): bool
+    {
+        if (! in_array($name, static::REQUEST_ACTIONS, true) || ! ($context['table'] ?? false) || blank($context['recordKey'] ?? null)) {
+            return true;
+        }
+
+        PanelAssist::flush();
+
+        // The table's query is the agent's queue: a request taken by someone else or finished is no longer in it.
+        $record = $this->getTableRecord((string) $context['recordKey']);
+        $action = $this->getTable()->getAction($name);
+
+        return $record instanceof AssistRequest && $action !== null && ! $action->record($record)->isHidden();
+    }
+
+    protected function changedMeanwhile(): void
+    {
+        Notification::make()
+            ->title(__('session-replay::viewer.assist.not_open'))
+            ->warning()
+            ->send();
     }
 
     public function content(Schema $schema): Schema
