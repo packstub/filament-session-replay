@@ -18,6 +18,16 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Database notifications, for a panel that has them on.
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
             $table->string('name');

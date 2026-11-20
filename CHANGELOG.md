@@ -4,8 +4,19 @@ All notable changes to `packstub/filament-session-replay` are documented here.
 
 ## Unreleased
 
+Assist in the panel: help requests and a live view of the visitor's page. Needs Session Replay 1.2 (`packstub/session-replay: ^1.2`) with `SESSION_REPLAY_ASSIST` on; the live view also needs [Holler for Laravel](https://github.com/packstub/holler) and [Filament Holler](https://github.com/packstub/filament-holler) (suggested: `composer require packstub/filament-holler`). See [Assist](docs/assist.md).
+
 **Security:** on Filament 5.11 and later, the watch page of a recording the `viewSessionReplay` gate (or the policy) refused still opened for anyone who could see the Sessions list, showing whose recording it was and when; the player's data stayed behind the gate. The page asks the gate again on every Filament 5.
 
+- **Help requests** under the Sessions resource: who is waiting, their message and page, with Claim, Open live view, Withdraw and End (a click on a request that changed meanwhile says so); the number waiting is the navigation badge
+- A toast for each new request, with Claim, and a note in the bell when the panel has database notifications, without the person's name or message (`->assistNotifications(false)` turns them off)
+- A **Live now** tab on the recordings list, "last seen" on live recordings, and **Offer help** on a live recording and its watch page
+- The **live view**: the visitor's page mirrored live on a panel page, with remote control, drawing, audio, video and screen share as the panel's own buttons, beside the Filament Holler widget
+- **Show my pointer** (on by default): the visitor sees where you point while you watch, without remote control
+- **Put on hold** and **Resume** on the live view, to ring a colleague from the Holler widget, say; the visitor's page says you will be right back
+- Leaving the live view leaves the call and keeps the request: Open live view picks it up again
+- The live view sends Session Replay's mirror policy, so the visitor's page cannot make your browser load another site (your app's own policy still applies beside it); add hosts the panel itself needs on that page (avatars, say) to `assist.mirror_sources`
+- `->assist(false)` keeps a panel to recordings; the Assist icons have aliases (`SessionReplayIconAlias`)
 - `composer.json`'s homepage and docs link point at packstub.dev
 
 ## 1.1.1 — 2026-11-04

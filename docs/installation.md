@@ -7,7 +7,7 @@
 | PHP | 8.3 or newer |
 | Laravel | 12.x or 13.x |
 | Filament | 5.x |
-| packstub/session-replay | ^1.0, installed by Composer |
+| packstub/session-replay | ^1.2, installed by Composer |
 
 ## Install
 

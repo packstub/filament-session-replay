@@ -10,7 +10,9 @@ use Filament\Panel;
 use Filament\Support\Concerns\EvaluatesClosures;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
+use Packstub\SessionReplay\Filament\Livewire\AssistNotifier;
 use Packstub\SessionReplay\Filament\Resources\ReplaySessions\ReplaySessionResource;
 use Packstub\SessionReplay\Filament\Widgets\ReplayStatsWidget;
 use Packstub\SessionReplay\Models\ReplaySession;
@@ -55,6 +57,10 @@ class SessionReplayPlugin implements Plugin
     protected string $slug = 'session-replays';
 
     protected bool $scopeToTenant = true;
+
+    protected bool|Closure $assist = true;
+
+    protected bool|Closure $assistNotifications = true;
 
     public static function make(): static
     {
@@ -202,6 +208,25 @@ class SessionReplayPlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Assist in this panel (help requests, Offer help, the live stage), while the core has it on
+     * (`session-replay.assist.enabled`). false keeps the panel to recordings.
+     */
+    public function assist(bool|Closure $condition = true): static
+    {
+        $this->assist = $condition;
+
+        return $this;
+    }
+
+    /** Tell the people who may help about each new request, with a toast (and in the bell with database notifications on). */
+    public function assistNotifications(bool|Closure $condition = true): static
+    {
+        $this->assistNotifications = $condition;
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
         if ($this->evaluate($this->resource)) {
@@ -218,6 +243,27 @@ class SessionReplayPlugin implements Plugin
         }
 
         $panel->renderHook(PanelsRenderHook::BODY_END, fn (): HtmlString => $this->recorder());
+        $panel->renderHook(PanelsRenderHook::BODY_END, fn (): HtmlString => $this->assistNotifier());
+    }
+
+    /**
+     * The poller that tells an agent about new help requests, for the panel this plugin was registered on.
+     *
+     * @internal Rendered by the panel's render hook.
+     */
+    public function assistNotifier(): HtmlString
+    {
+        $panel = Filament::getCurrentPanel();
+
+        if ($panel === null || ! $panel->hasPlugin($this->getId()) || $panel->getPlugin($this->getId()) !== $this || ! Filament::auth()->check()) {
+            return new HtmlString('');
+        }
+
+        if (! AssistNotifier::shouldRender($this)) {
+            return new HtmlString('');
+        }
+
+        return new HtmlString(Blade::render("@livewire('filament-session-replay.assist-notifier')"));
     }
 
     public function boot(Panel $panel): void
@@ -398,5 +444,15 @@ class SessionReplayPlugin implements Plugin
     public function isScopedToTenant(): bool
     {
         return $this->scopeToTenant;
+    }
+
+    public function hasAssist(): bool
+    {
+        return (bool) $this->evaluate($this->assist);
+    }
+
+    public function hasAssistNotifications(): bool
+    {
+        return (bool) $this->evaluate($this->assistNotifications);
     }
 }

@@ -6,6 +6,11 @@ use Filament\Forms\Components\Field;
 use Filament\Infolists\Components\Entry;
 use Filament\Schemas\Components\Component;
 use Filament\Tables\Columns\Column;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Support\Facades\Event;
+use Livewire\Livewire;
+use Packstub\SessionReplay\Filament\Http\Middleware\SendMirrorPolicy;
+use Packstub\SessionReplay\Filament\Livewire\AssistNotifier;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -27,6 +32,11 @@ class FilamentSessionReplayServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->loadJsonTranslationsFrom(__DIR__.'/../../resources/lang');
+
+        Livewire::component('filament-session-replay.assist-notifier', AssistNotifier::class);
+
+        // The live view's mirror policy, once the app's own middleware has had its say on the response.
+        Event::listen(RequestHandled::class, [SendMirrorPolicy::class, 'apply']);
 
         $this->registerMaskingMacros();
     }
