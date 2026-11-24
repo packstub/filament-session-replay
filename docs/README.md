@@ -1,6 +1,6 @@
 # Filament Session Replay
 
-Session replay inside a Filament panel: the recordings of [Session Replay for Laravel](https://github.com/packstub/session-replay/tree/main/docs) in a filterable resource, the player with markers on the timeline, and the pieces that connect recordings to your users. Free and open source (MIT).
+Session replay inside a Filament panel: the recordings of [Session Replay for Laravel](https://github.com/packstub/session-replay/tree/main/docs) in a filterable resource, the player with markers on the timeline, the pieces that connect recordings to your users, and Assist: live help on the visitor's page, with co-browsing, remote control and calls. Free and open source (MIT).
 
 - Repository: [github.com/packstub/filament-session-replay](https://github.com/packstub/filament-session-replay)
 - Support: [GitHub issues](https://github.com/packstub/filament-session-replay/issues)
@@ -11,7 +11,8 @@ Session replay inside a Filament panel: the recordings of [Session Replay for La
 - **[Recording without a directive](installation.md#register-the-plugin)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
 - **[A Sessions resource](watching.md#the-list)**: every recording with its errors, rage clicks and vitals, searchable and filterable.
 - **[The player in the panel](watching.md#the-watch-page)**: markers on the timeline and in a list that seeks on click, with Pin, Export and Delete.
-- **[Help requests and a live view](assist.md)**: visitors ask for help, support claims the request (or offers help on a live recording) and sees the page as it happens, with remote control, drawing, audio and screen share through Holler for Laravel.
+- **[Help requests](assist.md#help-requests)**: visitors ask from the page they are on, support gets a toast and a badge, claims the request or offers help on a recording that is live now.
+- **[Live co-browsing, calls and remote control](assist.md#the-live-view)**: the visitor's page mirrored as it happens, your pointer and drawings on their page, control of it, audio, video and screen share, each with their yes, through Filament Holler.
 - **[Around your users](people.md)**: a relation manager, a "Watch last session" action and a dashboard widget.
 - **[Masking where the field is](masking.md)**: `->maskInReplay()` and `->blockInReplay()` on fields, columns, entries and sections.
 - **[Workspace-aware](tenancy.md)**: each workspace sees its own recordings, an operator panel sees them all, impersonated sessions are flagged.

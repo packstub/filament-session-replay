@@ -13,7 +13,7 @@
 
 </div>
 
-Session replay inside your Filament panel. "The form did nothing when I clicked save" becomes a replay you watch next to the user it belongs to, with the failed Livewire request, the JavaScript error and the rage click marked on the timeline. Recordings stay on your own disk and database, and who may watch them is a gate your app defines. Free and open source (MIT), built on [Session Replay for Laravel](https://github.com/packstub/session-replay) and [rrweb](https://github.com/rrweb-io/rrweb).
+Session replay inside your Filament panel. "The form did nothing when I clicked save" becomes a replay you watch next to the user it belongs to, with the failed Livewire request, the JavaScript error and the rage click marked on the timeline. And when someone needs help right now, **Assist** brings support onto their page live: see it as it happens, point, draw, take control with their permission, and talk over audio, video and screen share, all from the panel. Recordings stay on your own disk and database, and who may watch or help is a gate your app defines. Free and open source (MIT), built on [Session Replay for Laravel](https://github.com/packstub/session-replay), [rrweb](https://github.com/rrweb-io/rrweb) and [Filament Holler](https://github.com/packstub/filament-holler).
 
 ![A replay on the watch page: the pointer clicks "Save changes" again and again, the save fails, and the server error's details open with its report id and "Open in logs"](https://raw.githubusercontent.com/packstub/art/main/filament-session-replay/demo.gif)
 
@@ -28,7 +28,8 @@ Featured on Laravel News: [Session Replay for Laravel: Self-Hosted Browser Recor
 - **[Recording without a directive](#recording-a-panel)**: register the plugin and the panel's pages are recorded, with its guard, tenant and impersonator.
 - **[A Sessions resource](#the-sessions-resource)**: every recording with its errors, rage clicks and vitals, searchable and filterable.
 - **[The player in the panel](#watching-a-recording)**: markers on the timeline and in a list that seeks on click, with Pin, Export and Delete.
-- **[Help requests and a live view](#help-requests-and-a-live-view)**: visitors ask for help, support claims the request (or offers help on a live recording) and sees the page as it happens, with remote control, drawing, audio and screen share through [Holler for Laravel](https://github.com/packstub/holler).
+- **[Help requests](#assist-live-help-on-the-visitors-page)**: visitors ask from the page they are on, support gets a toast and a badge, claims the request or offers help on a recording that is live now.
+- **[Live co-browsing, calls and remote control](#the-live-view)**: the visitor's page mirrored as it happens, your pointer and drawings on their page, control of it, audio, video and screen share, each with their yes.
 - **[Around your users](#around-your-users)**: a relation manager, a "Watch last session" action and a dashboard widget.
 - **[Masking where the field is](#masking-where-the-field-is)**: `->maskInReplay()` and `->blockInReplay()` on fields, columns, entries and sections.
 - **[Workspace-aware](#workspaces-and-impersonation)**: each workspace sees its own recordings, an operator panel sees them all, impersonated sessions are flagged.
@@ -101,13 +102,52 @@ Newest first, searchable by a person's name, email or key, with the numbers that
 
 The watch page shows the facts, the player and the markers: page views, failed Livewire requests, uncaught errors, `console.error`, web vitals and rage clicks. A click on a marker seeks to a second before it, and `?t=83` opens a replay at 1:23, which makes a good link for a ticket. **Pin** keeps a recording out of pruning, **Export** downloads it as one JSON file with its stylesheets, **Delete** removes it with its files. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md#the-watch-page)
 
-## Help requests and a live view
+## Assist: live help on the visitor's page
+
+A replay tells you what happened. Assist lets you help while it is happening: the visitor asks for help from the page they are on, or you see them on a live recording and offer it, and you are on their page together, without leaving the panel.
 
 ```env
 SESSION_REPLAY_ASSIST=true
 ```
 
-With the core's Assist on, a visitor asks for help from the page they are on (`SessionReplay.assist.request()` or the core's "Get help" button) and the panel's **Help requests** list shows them, with the number waiting as the navigation badge and a toast for everyone who may take the request. **Claim** takes it; a live recording has **Offer help**. With [`packstub/holler`](https://github.com/packstub/holler) and [Filament Holler](https://github.com/packstub/filament-holler) on the panel, both lead to the **live view**: the visitor's page mirrored as it happens, masked like the recording, with remote control, drawing, audio, video and screen share, each asked for, in the panel's own buttons and colours. Without Holler, help requests are a queue your team answers through its own channels. Who may help is the same gate as who may watch, narrowed with `SessionReplay::canAssistUsing()`. Assist needs Session Replay for Laravel 1.2 (this plugin requires it); for the live view, `composer require packstub/filament-holler` (it brings Holler for Laravel along) and register `FilamentHollerPlugin::make()` on the same panel. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/assist.md)
+```bash
+composer require packstub/filament-holler   # for the live view: calls, co-browsing, remote control
+php artisan migrate && php artisan filament:assets
+```
+
+```php
+use Packstub\FilamentHoller\FilamentHollerPlugin;
+use Packstub\SessionReplay\SessionReplayPlugin;
+
+$panel->plugins([
+    SessionReplayPlugin::make(),
+    FilamentHollerPlugin::make(),
+]);
+```
+
+### Help requests
+
+- **Asking.** A visitor asks from your own "Contact support" button (`SessionReplay.assist.request({ message })`) or the core's floating **Get help** button, signed in or a guest. A small panel on their page says they are waiting, with Cancel.
+- **Help requests** in the navigation lists who waits, with their message, the page they are on, how long they have waited and whether they are still there. The number waiting is the navigation badge.
+- **Notifications.** Everyone who may take the request gets a toast on whatever panel page they are on, with **Claim**, and a note in the bell when the panel has database notifications.
+- **Claim** takes a request (two agents never both get it); **Withdraw** hands it back, **End** finishes it.
+- **Live now and Offer help.** The recordings list has a **Live now** tab ("last seen 40 s ago"). Offer help on a live recording and the visitor sees "Ana would like to help you with this page", with Accept and Not now.
+
+Without Holler, help requests are a queue your team answers through its own channels.
+
+### The live view
+
+With [Filament Holler](https://github.com/packstub/filament-holler) on the panel, Claim and Offer help open the **live view**, in the panel's own buttons and colours:
+
+- **Co-browsing.** The visitor's page, mirrored as it happens in a sandboxed frame without scripts, masked exactly like the recording. Peer to peer over WebRTC, about 300 ms behind them.
+- **Your pointer on their page.** While you watch, they see your named cursor where you point ("this button, up here"). **Draw** leaves strokes on their page that fade after a few seconds.
+- **Remote control.** Once they allow it: clicks, drags, scrolling and typing into fields, across the pages of a flow such as a checkout, with a dashed frame round their page the whole time. Passwords are never filled; their own mouse or keys pause you, and Escape takes control back.
+- **Audio and video calls.** Talk it through with **Start audio** and **Start video**, with Mute and End.
+- **Screen share, both ways.** Ask to see their screen when the problem is outside the page, or share yours to show them how.
+- **Put on hold.** Step out to ask a colleague on a regular Holler call and come back with **Resume**; the visitor's page says you will be right back.
+- **What happened.** Every tool that cannot be used now says why, and what the visitor allowed, refused or took back is listed as it happens.
+
+Each step asks the visitor first, in its own question that cannot be answered by a stray keypress, and every answer goes to the request's grants log, your record of consent. Audio, video and screens are never stored. Who may help is the same gate as who may watch, narrowed with `SessionReplay::canAssistUsing()`; in a panel with tenancy each workspace sees its own requests. Assist needs Session Replay for Laravel 1.2, which this plugin requires. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/assist.md)
 
 ## Around your users
 
@@ -172,12 +212,13 @@ Gate::define('viewSessionReplay', function ($user, ?ReplaySession $session = nul
 
 The gate is asked without a recording for the list and with it for a single replay and every file behind it, in the panel and on the core's data routes alike. Until it is defined only the local environment is let in. A policy registered for `ReplaySession` takes over inside the panel (Filament Shield), `deleteSessionReplay` separates deleting from watching, and `SessionReplay::visibleUsing()` keeps rows the gate would refuse out of every list. [Read more](https://github.com/packstub/filament-session-replay/blob/main/docs/watching.md#who-may-do-what)
 
-## Two packages, one picture
+## The packages, one picture
 
 | Package | What it does |
 | --- | --- |
 | [`packstub/session-replay`](https://github.com/packstub/session-replay) | Records (rrweb, masked inputs, markers), ingests, stores gzip chunks on your disk with an index in your database, prunes, links the recording into Laravel's log context, and guards every byte with the `viewSessionReplay` gate. Works in any Laravel app. |
-| `packstub/filament-session-replay` (this one) | The panel experience: recording wired to the panel's guard and tenant, the Sessions resource, the watch page, the relation manager, the action, the widget and the masking macros. |
+| `packstub/filament-session-replay` (this one) | The panel experience: recording wired to the panel's guard and tenant, the Sessions resource, the watch page, Help requests and the live view, the relation manager, the action, the widget and the masking macros. |
+| [`packstub/filament-holler`](https://github.com/packstub/filament-holler) (optional) | The calls behind Assist's live view: audio, video, screen share and the data channel the mirror and remote control travel on, plus a calls widget for your team. |
 
 Everything about privacy, storage, consent and configuration lives in the core and applies here unchanged. Hosted replay products are a great fit for product analytics and funnels; this pair is for replay inside your own app, and the two run happily side by side.
 
